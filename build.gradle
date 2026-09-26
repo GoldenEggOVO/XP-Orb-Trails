@@ -75,11 +75,11 @@ jar {
 	}
 }
 
-def remappedJar = tasks.named('remapJar')
+def releaseJarTask = tasks.named('jar')
 tasks.register('verifyReleaseJar') {
-	dependsOn remappedJar
+	dependsOn releaseJarTask
 	doLast {
-		def releaseJar = remappedJar.get().archiveFile.get().asFile
+		def releaseJar = releaseJarTask.get().archiveFile.get().asFile
 		def requiredEntries = [
 			'dev/goldenegg/xporbtrails/TrailConfigScreen.class',
 			'dev/goldenegg/xporbtrails/ModMenuIntegration.class',
