@@ -18,14 +18,14 @@ import java.util.function.DoubleConsumer;
 
 public final class TrailConfigScreen extends Screen {
     private enum Page { APPEARANCE, ANIMATION, PICKUP, PERFORMANCE, PROFILES }
-    private record Preset(String name, int start, int end) { }
+    private record Preset(String name, boolean translated, int start, int end) { }
     private record ShapePreset(String key, double tail, double middle, double head) { }
     private record ProfileChoice(String label, boolean translated, TrailConfig.SavedProfile profile, boolean saved) { }
     private static final List<Preset> PRESETS = List.of(
-            new Preset("Custom", -1, -1),
-            new Preset("Classic Green", 0xFFF23A, 0x45FF00),
-            new Preset("Gold", 0xFFF4A0, 0xFF9D00),
-            new Preset("Blue Purple", 0x74F4FF, 0xA45CFF));
+            new Preset("screen.xporbtrails.preset.custom", true, -1, -1),
+            new Preset("screen.xporbtrails.preset.classic_green", true, 0xFFF23A, 0x45FF00),
+            new Preset("screen.xporbtrails.preset.gold", true, 0xFFF4A0, 0xFF9D00),
+            new Preset("screen.xporbtrails.preset.blue_purple", true, 0x74F4FF, 0xA45CFF));
     private static final List<ShapePreset> SHAPES = List.of(
             new ShapePreset("custom", -1, -1, -1),
             new ShapePreset("taper", 0.0, 0.62, 1.0),
@@ -92,9 +92,9 @@ public final class TrailConfigScreen extends Screen {
         rainbow.active = "rainbow".equals(c.colorMode);
 
         List<Preset> allPresets = new ArrayList<>(PRESETS);
-        for (TrailConfig.SavedPreset saved : c.savedPresets) allPresets.add(new Preset(saved.name, saved.startColor, saved.endColor));
+        for (TrailConfig.SavedPreset saved : c.savedPresets) allPresets.add(new Preset(saved.name, false, saved.startColor, saved.endColor));
         if (presetIndex >= allPresets.size()) presetIndex = 0;
-        addRenderableWidget(CycleButton.<Preset>builder(p -> Component.literal(p.name()), allPresets.get(presetIndex)).withValues(allPresets)
+        addRenderableWidget(CycleButton.<Preset>builder(p -> p.translated() ? Component.translatable(p.name()) : Component.literal(p.name()), allPresets.get(presetIndex)).withValues(allPresets)
                 .create(left, 186, 218, 20, Component.translatable("screen.xporbtrails.preset"), (b, preset) -> {
                     presetIndex = allPresets.indexOf(preset);
                     if (preset.start() >= 0) {
@@ -104,7 +104,7 @@ public final class TrailConfigScreen extends Screen {
                 }));
         addRenderableWidget(withTip(Button.builder(Component.translatable("screen.xporbtrails.save_preset"), b -> {
             if (c.savedPresets.size() < 12) {
-                c.savedPresets.add(new TrailConfig.SavedPreset("Custom " + (c.savedPresets.size() + 1), c.startColor, c.endColor));
+                c.savedPresets.add(new TrailConfig.SavedPreset(Component.translatable("screen.xporbtrails.saved_preset_name", c.savedPresets.size() + 1).getString(), c.startColor, c.endColor));
                 presetIndex = PRESETS.size() + c.savedPresets.size() - 1;
                 XpOrbTrailsClient.saveConfig();
                 rebuildWidgets();
@@ -175,7 +175,7 @@ public final class TrailConfigScreen extends Screen {
         }).bounds(left + 222, 72, 86, 20).build());
         Button save = withTip(Button.builder(Component.translatable("screen.xporbtrails.save_profile"), b -> {
             if (c.savedProfiles.size() < 8) {
-                c.savedProfiles.add(new TrailConfig.SavedProfile("Profile " + (c.savedProfiles.size() + 1), c));
+                c.savedProfiles.add(new TrailConfig.SavedProfile(Component.translatable("screen.xporbtrails.saved_profile_name", c.savedProfiles.size() + 1).getString(), c));
                 profileIndex = 4 + c.savedProfiles.size() - 1;
                 XpOrbTrailsClient.saveConfig();
                 rebuildWidgets();

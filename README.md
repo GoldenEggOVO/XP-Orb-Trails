@@ -26,13 +26,13 @@ and server-side installation are not required.
 
 ## Installation
 
-1. Download `xp-orb-trails-1.0.0+mc26.2.jar` from the
-   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.0).
+1. Download `xp-orb-trails-1.0.1+mc26.2.jar` from the
+   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1).
 2. Put the JAR and a compatible Fabric API JAR in the client `mods` folder.
 3. Start Minecraft with Fabric Loader. The server does not need this mod.
 
-The v1.0.0 asset was corrected on 2026-09-26; download it again if you
-obtained it earlier.
+The mod follows Minecraft's selected language. English is used when a
+translation is unavailable; English and Simplified Chinese are included.
 
 ## Configuration
 
@@ -57,7 +57,7 @@ Use Java 25 and the included Gradle wrapper:
 On Windows, run `./gradlew.bat build` instead. The build runs the configuration
 tests and checks that the release JAR contains the settings UI, Mod Menu
 integration, and translations. Install
-`build/libs/xp-orb-trails-1.0.0+mc26.2.jar`; the `-sources.jar` file is for source
+`build/libs/xp-orb-trails-1.0.1+mc26.2.jar`; the `-sources.jar` file is for source
 inspection.
 
 ## License

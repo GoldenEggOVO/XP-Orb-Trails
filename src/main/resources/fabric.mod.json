@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "xporbtrails",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"name": "XP Orb Trails",
 	"description": "Adds smooth, colorful, highly customizable trails and pickup flashes to experience orbs—without shaders.",
 	"authors": [
