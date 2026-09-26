@@ -75,10 +75,11 @@ jar {
 	}
 }
 
+def remappedJar = tasks.named('remapJar')
 tasks.register('verifyReleaseJar') {
-	dependsOn remapJar
+	dependsOn remappedJar
 	doLast {
-		def releaseJar = remapJar.archiveFile.get().asFile
+		def releaseJar = remappedJar.get().archiveFile.get().asFile
 		def requiredEntries = [
 			'dev/goldenegg/xporbtrails/TrailConfigScreen.class',
 			'dev/goldenegg/xporbtrails/ModMenuIntegration.class',
@@ -97,7 +98,7 @@ tasks.register('verifyReleaseJar') {
 }
 
 tasks.named('check') {
-	dependsOn verifyReleaseJar
+	dependsOn tasks.named('verifyReleaseJar')
 }
 
 // configure the maven publication
