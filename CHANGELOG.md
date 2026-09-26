@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1 — Minecraft 26.2
+
+- Restore the complete settings UI in the release JAR. Trail settings can be
+  edited using Mod Menu's Config button or the Open Trail Settings key binding.
+- Make built-in color presets follow Minecraft's selected language, with English
+  as the fallback. New preset and profile names use the language selected when
+  they are created.
+- Standardize author credits and the Java package namespace on GoldenEggOVO.
+- Verify settings classes, Mod Menu integration, and translations in the release JAR.
+
 ## 1.0.0 - 2026-08-31
 
 First public release for Minecraft 26.2.

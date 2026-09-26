@@ -1,5 +1,14 @@
 # XP Orb Trails
 
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A)](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2)
+[![Fabric](https://img.shields.io/badge/Mod%20loader-Fabric-DBD0B4)](https://fabricmc.net/use/installer/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+[Download](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases) ·
+[Changelog](CHANGELOG.md) ·
+[Report an issue](https://github.com/GoldenEggOVO/XP-Orb-Trails/issues) ·
+[Contributing](CONTRIBUTING.md)
+
 XP Orb Trails is a client-only Fabric mod for Minecraft 26.2. It adds smooth,
 colorful trails to moving experience orbs and an optional pickup flash. Shaders
 and server-side installation are not required.
@@ -59,6 +68,20 @@ tests and checks that the release JAR contains the settings UI, Mod Menu
 integration, and translations. Install
 `build/libs/xp-orb-trails-1.0.1+mc26.2.jar`; the `-sources.jar` file is for source
 inspection.
+
+## Minecraft versions and branches
+
+Each supported Minecraft version has its own branch and release. Use the JAR
+matching your Minecraft version.
+
+| Minecraft | Source branch | Release |
+| --- | --- | --- |
+| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [`v1.1.0 for 26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.1.0) |
+| 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [`v1.0.1 for 26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1) |
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout, validation, and
+release process. This repository does not use GitHub Actions workflows;
+builds and release verification are run locally.
 
 ## License
 
