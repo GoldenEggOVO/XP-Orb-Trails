@@ -1,4 +1,4 @@
-package dev.goldenegg.xporbtrails;
+package dev.goldeneggovo.xporbtrails;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

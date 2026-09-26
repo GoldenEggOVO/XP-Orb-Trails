@@ -5,17 +5,17 @@
 	"name": "XP Orb Trails",
 	"description": "Adds smooth, colorful, highly customizable trails and pickup flashes to experience orbs—without shaders.",
 	"authors": [
-		"GoldenEgg"
+		"GoldenEggOVO"
 	],
 	"license": "MIT",
 	"icon": "assets/xporbtrails/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"dev.goldenegg.xporbtrails.XpOrbTrailsClient"
+			"dev.goldeneggovo.xporbtrails.XpOrbTrailsClient"
 		],
 		"modmenu": [
-			"dev.goldenegg.xporbtrails.ModMenuIntegration"
+			"dev.goldeneggovo.xporbtrails.ModMenuIntegration"
 		]
 	},
 	"mixins": [

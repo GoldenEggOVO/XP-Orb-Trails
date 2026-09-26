@@ -1,6 +1,6 @@
 {
 	"required": true,
-	"package": "dev.goldenegg.xporbtrails.mixin",
+	"package": "dev.goldeneggovo.xporbtrails.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"ExperienceOrbMixin",

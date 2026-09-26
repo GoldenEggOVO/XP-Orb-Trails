@@ -81,9 +81,9 @@ tasks.register('verifyReleaseJar') {
 	doLast {
 		def releaseJar = releaseJarTask.get().archiveFile.get().asFile
 		def requiredEntries = [
-			'dev/goldenegg/xporbtrails/TrailConfigScreen.class',
-			'dev/goldenegg/xporbtrails/ModMenuIntegration.class',
-			'dev/goldenegg/xporbtrails/mixin/RenderPipelinesAccessor.class',
+			'dev/goldeneggovo/xporbtrails/TrailConfigScreen.class',
+			'dev/goldeneggovo/xporbtrails/ModMenuIntegration.class',
+			'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
 			'assets/xporbtrails/lang/en_us.json',
 			'assets/xporbtrails/lang/zh_cn.json'
 		]

@@ -1,6 +1,6 @@
-package dev.goldenegg.xporbtrails.mixin;
+package dev.goldeneggovo.xporbtrails.mixin;
 
-import dev.goldenegg.xporbtrails.TrailRenderer;
+import dev.goldeneggovo.xporbtrails.TrailRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
