@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 — Minecraft 26.3
+## 1.1.0 — Minecraft 26.3
 
 - Update Minecraft compatibility to 26.3, with Fabric API 0.161.0+26.3 and
   Mod Menu 21.0.0 integration.

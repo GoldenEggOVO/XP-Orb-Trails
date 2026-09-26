@@ -35,8 +35,8 @@ and server-side installation are not required.
 
 ## Installation
 
-1. Download `xp-orb-trails-1.0.1+mc26.3.jar` from the
-   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1+mc26.3).
+1. Download `xp-orb-trails-1.1.0+mc26.3.jar` from the
+   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.1.0).
 2. Put the JAR and a compatible Fabric API JAR in the client `mods` folder.
 3. Start Minecraft with Fabric Loader. The server does not need this mod.
 
@@ -66,7 +66,7 @@ Use Java 25 and the included Gradle wrapper:
 On Windows, run `./gradlew.bat build` instead. The build runs the configuration
 tests and checks that the release JAR contains the settings UI, Mod Menu
 integration, and translations. Install
-`build/libs/xp-orb-trails-1.0.1+mc26.3.jar`; the `-sources.jar` file is for source
+`build/libs/xp-orb-trails-1.1.0+mc26.3.jar`; the `-sources.jar` file is for source
 inspection.
 
 ## Minecraft versions and branches
@@ -76,7 +76,7 @@ matching your Minecraft version.
 
 | Minecraft | Source branch | Release |
 | --- | --- | --- |
-| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [`v1.0.1 for 26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1+mc26.3) |
+| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [`v1.1.0 for 26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.1.0) |
 | 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [`v1.0.1 for 26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1) |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout, validation, and
