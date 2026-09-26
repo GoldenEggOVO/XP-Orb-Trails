@@ -1,4 +1,4 @@
-package dev.goldenegg.xporbtrails;
+package dev.goldeneggovo.xporbtrails;
 
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
@@ -26,7 +26,7 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import dev.goldenegg.xporbtrails.mixin.RenderPipelinesAccessor;
+import dev.goldeneggovo.xporbtrails.mixin.RenderPipelinesAccessor;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

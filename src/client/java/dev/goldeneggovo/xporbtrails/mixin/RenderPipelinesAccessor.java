@@ -1,4 +1,4 @@
-package dev.goldenegg.xporbtrails.mixin;
+package dev.goldeneggovo.xporbtrails.mixin;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.RenderPipelines;

@@ -1,4 +1,4 @@
-package dev.goldenegg.xporbtrails;
+package dev.goldeneggovo.xporbtrails;
 
 import org.junit.jupiter.api.Test;
 

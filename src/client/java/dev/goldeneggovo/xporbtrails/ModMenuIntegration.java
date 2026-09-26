@@ -1,4 +1,4 @@
-package dev.goldenegg.xporbtrails;
+package dev.goldeneggovo.xporbtrails;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;

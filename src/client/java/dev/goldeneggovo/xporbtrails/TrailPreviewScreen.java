@@ -1,4 +1,4 @@
-package dev.goldenegg.xporbtrails;
+package dev.goldeneggovo.xporbtrails;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
