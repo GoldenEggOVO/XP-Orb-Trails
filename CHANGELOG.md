@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 — Minecraft 26.3
+
+- Update Minecraft compatibility to 26.3, with Fabric API 0.161.0+26.3 and
+  Mod Menu 21.0.0 integration.
+- Adapt trail rendering to RenderPearl and draw after the terrain render pass closes.
+- Keep the existing trail features, settings, profiles, and translations.
+- Organize source branches by Minecraft version and remove GitHub Actions workflows.
+
 ## 1.0.1 — Minecraft 26.2
 
 - Restore the complete settings UI in the release JAR. Trail settings can be

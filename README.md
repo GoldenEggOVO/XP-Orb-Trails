@@ -1,6 +1,6 @@
 # XP Orb Trails
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A)](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62B47A)](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3)
 [![Fabric](https://img.shields.io/badge/Mod%20loader-Fabric-DBD0B4)](https://fabricmc.net/use/installer/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -9,7 +9,7 @@
 [Report an issue](https://github.com/GoldenEggOVO/XP-Orb-Trails/issues) ·
 [Contributing](CONTRIBUTING.md)
 
-XP Orb Trails is a client-only Fabric mod for Minecraft 26.2. It adds smooth,
+XP Orb Trails is a client-only Fabric mod for Minecraft 26.3. It adds smooth,
 colorful trails to moving experience orbs and an optional pickup flash. Shaders
 and server-side installation are not required.
 
@@ -27,16 +27,16 @@ and server-side installation are not required.
 
 | Component | Version |
 | --- | --- |
-| Minecraft | 26.2 |
+| Minecraft | 26.3 |
 | Fabric Loader | 0.19.5 or newer |
-| Fabric API | 0.158.0+26.2 or newer for Minecraft 26.2 |
+| Fabric API | 0.161.0+26.3 or newer for Minecraft 26.3 |
 | Java | 25 or newer |
-| Mod Menu | Optional; adds a Config button |
+| Mod Menu | 21.0.0 or a compatible 26.3 release; optional, adds a Config button |
 
 ## Installation
 
-1. Download `xp-orb-trails-1.0.1+mc26.2.jar` from the
-   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1).
+1. Download `xp-orb-trails-1.0.1+mc26.3.jar` from the
+   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1+mc26.3).
 2. Put the JAR and a compatible Fabric API JAR in the client `mods` folder.
 3. Start Minecraft with Fabric Loader. The server does not need this mod.
 
@@ -66,7 +66,7 @@ Use Java 25 and the included Gradle wrapper:
 On Windows, run `./gradlew.bat build` instead. The build runs the configuration
 tests and checks that the release JAR contains the settings UI, Mod Menu
 integration, and translations. Install
-`build/libs/xp-orb-trails-1.0.1+mc26.2.jar`; the `-sources.jar` file is for source
+`build/libs/xp-orb-trails-1.0.1+mc26.3.jar`; the `-sources.jar` file is for source
 inspection.
 
 ## Minecraft versions and branches

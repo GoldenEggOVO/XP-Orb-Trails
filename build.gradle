@@ -28,7 +28,7 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	compileOnly "com.terraformersmc:modmenu:20.0.1"
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 	testImplementation sourceSets.client.output
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
@@ -40,11 +40,13 @@ test {
 }
 
 processResources {
-	def version = project.version
-	inputs.property "version", version
-
+	def metadata = [version: project.version,
+		minecraft_version: project.minecraft_version,
+		loader_version: project.loader_version,
+		fabric_api_version: project.fabric_api_version]
+	inputs.properties metadata
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand metadata
 	}
 }
 

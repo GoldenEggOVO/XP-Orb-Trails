@@ -51,7 +51,8 @@ public final class XpOrbTrailsClient implements ClientModInitializer {
         }
 
         LevelExtractionEvents.END_EXTRACTION.register(TrailRenderer::extract);
-        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(TrailRenderer::render);
+        // Upload and draw after vanilla has closed its terrain render pass.
+        LevelRenderEvents.END_MAIN.register(TrailRenderer::render);
 
         KeyMapping.Category category = KeyMapping.Category.register(
                 Identifier.fromNamespaceAndPath("xporbtrails", "settings"));
