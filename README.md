@@ -76,7 +76,7 @@ matching your Minecraft version.
 
 | Minecraft | Source branch | Release |
 | --- | --- | --- |
-| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [`v1.0.1 for 26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1+mc26.3) |
+| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [`v1.1.0 for 26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.1.0) |
 | 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [`v1.0.1 for 26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.1) |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout, validation, and
