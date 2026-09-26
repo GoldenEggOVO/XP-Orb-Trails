@@ -1,52 +1,68 @@
 # XP Orb Trails
 
-XP Orb Trails is a client-only Fabric mod for Minecraft 26.2. It gives moving
-experience orbs smooth, colorful light trails and an optional pickup flash,
-without requiring shaders or any server-side installation.
+XP Orb Trails is a client-only Fabric mod for Minecraft 26.2. It adds smooth,
+colorful trails to moving experience orbs and an optional pickup flash. Shaders
+and server-side installation are not required.
 
 ## Features
 
-- Smooth interpolated trails with adjustable lifetime and performance limits.
-- Solid, gradient, and animated rainbow color modes.
-- Separate head, middle, and tail widths, plus ready-made shape presets.
-- Adjustable opacity, glow, motion shift, camera push, render range, and fading.
-- Soft, star, and ring pickup flashes with conservative defaults.
-- Built-in presets and named custom profiles.
-- In-game color picker and a standalone animated preview window.
-- Full Simplified Chinese and English interface.
+- Interpolated trails with adjustable lifetime, render range, and performance limits.
+- Solid, gradient, and animated rainbow colors, with an in-game color picker.
+- Separate head, middle, and tail widths, plus shape presets.
+- Adjustable opacity, glow, motion shift, camera push, and fading.
+- Optional soft, star, and ring pickup flashes.
+- Built-in presets, named custom profiles, and an animated preview screen.
+- English and Simplified Chinese interfaces.
+
+## Requirements
+
+| Component | Version |
+| --- | --- |
+| Minecraft | 26.2 |
+| Fabric Loader | 0.19.5 or newer |
+| Fabric API | 0.158.0+26.2 or newer for Minecraft 26.2 |
+| Java | 25 or newer |
+| Mod Menu | Optional; adds a Config button |
 
 ## Installation
 
-1. Install Minecraft 26.2 with Fabric Loader 0.19.5 or newer.
-2. Put `xp-orb-trails-1.0.0+mc26.2.jar` in the client `mods` folder.
-3. Fabric API 0.158.0 or newer is required. The server does not need this mod.
+1. Download `xp-orb-trails-1.0.0+mc26.2.jar` from the
+   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.0.0).
+2. Put the JAR and a compatible Fabric API JAR in the client `mods` folder.
+3. Start Minecraft with Fabric Loader. The server does not need this mod.
+
+The v1.0.0 asset was corrected on 2026-09-26; download it again if you
+obtained it earlier.
 
 ## Configuration
 
-Install Mod Menu and use its Config button, or bind **Open Trail Settings** in
-Minecraft's Controls screen. Changes apply immediately and are saved to
-`config/xp-orb-trails.json` when the screen closes. Every settings page has its
-own reset button, so unrelated choices are preserved. Hover over an option for
+Open the settings screen through Mod Menu's Config button or bind
+**Open Trail Settings** in Minecraft's Controls screen. Changes apply
+immediately and are saved to `config/xp-orb-trails.json` when the screen closes.
+Each settings page has its own reset button, and hovering over an option shows
 a short description.
 
-If the configuration file becomes unreadable, the mod preserves it as
-`xp-orb-trails.json.broken` (or a numbered variant), restores safe defaults, and
+If the configuration file is unreadable, the mod attempts to preserve it as
+`xp-orb-trails.json.broken` (or a numbered variant), restores defaults, and
 continues loading.
-
-## Compatibility
-
-- Minecraft 26.2
-- Fabric Loader 0.19.5 or newer
-- Fabric API 0.158.0+26.2 or newer
-- Java 25 or newer
-- Mod Menu is optional but recommended
-
-The mod is client-only. It does not need to be installed on a server. Shader
-packs are not required.
 
 ## Building from source
 
-Run `./gradlew build` with Java 25. Release jars are written to `build/libs/`.
+Use Java 25 and the included Gradle wrapper:
+
+```sh
+./gradlew build
+```
+
+On Windows, run `./gradlew.bat build` instead. The build runs the configuration
+tests and checks that the release JAR contains the settings UI, Mod Menu
+integration, and translations. Install
+`build/libs/xp-orb-trails-1.0.0+mc26.2.jar`; the `-sources.jar` file is for source
+inspection.
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for the copyright notice and terms.
 
 This is an independent implementation and contains no Shine source code or
 assets.
