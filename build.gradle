@@ -29,7 +29,14 @@ dependencies {
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	compileOnly "com.terraformersmc:modmenu:20.0.1"
+	testImplementation sourceSets.client.output
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
 
+}
+
+test {
+	useJUnitPlatform()
 }
 
 processResources {
@@ -55,6 +62,10 @@ java {
 	targetCompatibility = JavaVersion.VERSION_25
 }
 
+tasks.withType(AbstractArchiveTask).configureEach {
+	archiveVersion = "${project.version}+mc${project.minecraft_version}"
+}
+
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
@@ -62,6 +73,31 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_$projectName"}
 	}
+}
+
+tasks.register('verifyReleaseJar') {
+	dependsOn remapJar
+	doLast {
+		def releaseJar = remapJar.archiveFile.get().asFile
+		def requiredEntries = [
+			'dev/goldenegg/xporbtrails/TrailConfigScreen.class',
+			'dev/goldenegg/xporbtrails/ModMenuIntegration.class',
+			'dev/goldenegg/xporbtrails/mixin/RenderPipelinesAccessor.class',
+			'assets/xporbtrails/lang/en_us.json',
+			'assets/xporbtrails/lang/zh_cn.json'
+		]
+		new java.util.zip.ZipFile(releaseJar).withCloseable { zip ->
+			requiredEntries.each { entry ->
+				if (zip.getEntry(entry) == null) {
+					throw new GradleException("Release JAR is missing ${entry}: ${releaseJar}")
+				}
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn verifyReleaseJar
 }
 
 // configure the maven publication
