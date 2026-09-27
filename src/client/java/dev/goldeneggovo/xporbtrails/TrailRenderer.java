@@ -197,13 +197,14 @@ public final class TrailRenderer {
 
         for (RenderTrail trail : snapshot) {
             appendTube(vertices, trail.samples, camera, trail.now, lifetime,
-                    cfg.width, cfg.opacity * cfg.glowStrength * trail.opacity,
+                    cfg.width, cfg.effectStrength * trail.opacity,
                     cfg.startColor, cfg.endColor, cfg.colorMode, cfg.rainbowSpeed,
                     cfg.tailWidthScale, cfg.middleWidthScale, cfg.headWidthScale);
             if (cfg.pickupFlash && trail.flashProgress >= 0.0 && trail.flashProgress < 1.0 && !trail.samples.isEmpty()) {
                 appendPickupFlash(vertices, trail.samples.get(trail.samples.size() - 1).position, camera,
-                        trail.flashProgress, cfg.width, cfg.opacity * cfg.glowStrength * cfg.pickupFlashStrength,
-                        cfg.pickupFlashSize, cfg.pickupFlashStyle, cfg.endColor, cfg.colorMode, cfg.rainbowSpeed, trail.now);
+                        trail.flashProgress, cfg.effectStrength * cfg.pickupFlashStrength,
+                        cfg.pickupFlashSize, cfg.pickupFlashStyle, "solid".equals(cfg.colorMode) ? cfg.startColor : cfg.endColor,
+                        cfg.colorMode, cfg.rainbowSpeed, trail.now);
             }
         }
 
@@ -274,10 +275,10 @@ public final class TrailRenderer {
     }
 
     private static void appendPickupFlash(VertexConsumer out, Vec3 center, Vec3 camera,
-                                          double progress, double width, double opacity,
+                                          double progress, double opacity,
                                           double size, String style, int endColor, String colorMode, double rainbowSpeed, long now) {
         double eased = smoothStep(progress);
-        double radius = width * size * (0.65 + 2.0 * eased);
+        double radius = 0.24 * size * (0.65 + 2.0 * eased);
         double fade = 1.0 - smoothStep(progress);
         int rgb = "rainbow".equals(colorMode)
                 ? hsvToRgb((float) ((now / 1_000_000_000.0 * rainbowSpeed + 0.72) % 1.0), 0.75F, 1.0F)

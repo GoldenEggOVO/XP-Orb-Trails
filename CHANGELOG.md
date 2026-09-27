@@ -2,6 +2,11 @@
 
 ## Unreleased — Minecraft 26.3
 
+- Reorganize settings into scrollable Common, Appearance, Advanced, and My Profiles pages.
+- Replace cycling presets with selection lists and collapse advanced detail controls.
+- Merge opacity and glow strength into Effect Strength, preserving existing configurations and profiles.
+- Make pickup flash size independent of trail width and show a live preview in wide windows.
+
 - Keep trails continuous when the number of experience orbs exceeds the trail limit.
 - Skip distant orbs before tracking and release their trail slots when they leave range.
 - Clear trails when disabled, when changing worlds, and when disconnecting.

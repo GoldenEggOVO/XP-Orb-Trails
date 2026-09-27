@@ -8,385 +8,334 @@ import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-
-import java.util.List;
+import net.minecraft.network.chat.MutableComponent;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import java.util.function.IntConsumer;
 
 public final class TrailConfigScreen extends Screen {
-    private enum Page { APPEARANCE, ANIMATION, PICKUP, PERFORMANCE, PROFILES }
-    private record Preset(String name, boolean translated, int start, int end) { }
-    private record ShapePreset(String key, double tail, double middle, double head) { }
-    private record ProfileChoice(String label, boolean translated, TrailConfig.SavedProfile profile, boolean saved) { }
-    private static final List<Preset> PRESETS = List.of(
-            new Preset("screen.xporbtrails.preset.custom", true, -1, -1),
-            new Preset("screen.xporbtrails.preset.classic_green", true, 0xFFF23A, 0x45FF00),
-            new Preset("screen.xporbtrails.preset.gold", true, 0xFFF4A0, 0xFF9D00),
-            new Preset("screen.xporbtrails.preset.blue_purple", true, 0x74F4FF, 0xA45CFF));
-    private static final List<ShapePreset> SHAPES = List.of(
-            new ShapePreset("custom", -1, -1, -1),
-            new ShapePreset("taper", 0.0, 0.62, 1.0),
-            new ShapePreset("spindle", 0.12, 1.25, 0.42),
-            new ShapePreset("uniform", 1.0, 1.0, 1.0),
-            new ShapePreset("hourglass", 0.78, 0.25, 1.0));
-
+    private enum Page { COMMON, APPEARANCE, ADVANCED, PROFILES }
+    private record Preset(String key, int start, int end) { }
+    private record Shape(String key, double tail, double middle, double head) { }
+    private record Profile(Component name, TrailConfig.SavedProfile settings, int savedIndex) { }
+    private static final List<Preset> COLORS = List.of(
+            new Preset("classic_green", 0xFFF23A, 0x45FF00),
+            new Preset("gold", 0xFFF4A0, 0xFF9D00),
+            new Preset("blue_purple", 0x74F4FF, 0xA45CFF));
+    private static final List<Shape> SHAPES = List.of(
+            new Shape("taper", 0.0, 0.62, 1.0), new Shape("spindle", 0.12, 1.25, 0.42),
+            new Shape("uniform", 1.0, 1.0, 1.0), new Shape("hourglass", 0.78, 0.25, 1.0));
     private final Screen parent;
-    private Page page = Page.APPEARANCE;
-    private int presetIndex;
-    private int shapeIndex;
-    private int profileIndex;
+    private final TrailPreviewScreen preview;
+    private Page page = Page.COMMON;
+    private TrailSettingsList list;
+    private double scroll;
+    private boolean customShape, pickupDetails, positionDetails;
+    private int selectedProfile = -1;
     private int deleteArmedIndex = -1;
-    private EditBox startColor;
-    private EditBox endColor;
+    private Component appliedProfile;
+    private Button profileButton;
+    private Button shapeButton;
+    private boolean wide;
+    private int panelX, panelWidth, previewX, previewWidth;
 
     public TrailConfigScreen(Screen parent) {
-        super(Component.translatable("screen.xporbtrails.title"));
+        super(text("title"));
         this.parent = parent;
+        preview = new TrailPreviewScreen(this);
     }
+    private static MutableComponent text(String key) { return Component.translatable("screen.xporbtrails." + key); }
 
-    @Override
-    protected void init() {
-        int center = width / 2;
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.appearance"), b -> switchPage(Page.APPEARANCE)).bounds(center - 159, 28, 62, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.animation"), b -> switchPage(Page.ANIMATION)).bounds(center - 95, 28, 62, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.pickup"), b -> switchPage(Page.PICKUP)).bounds(center - 31, 28, 62, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.performance"), b -> switchPage(Page.PERFORMANCE)).bounds(center + 33, 28, 62, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.profiles"), b -> switchPage(Page.PROFILES)).bounds(center + 97, 28, 62, 20).build());
-        if (page == Page.APPEARANCE) buildAppearance(center);
-        else if (page == Page.ANIMATION) buildAnimation(center);
-        else if (page == Page.PICKUP) buildPickup(center);
-        else if (page == Page.PERFORMANCE) buildPerformance(center);
-        else buildProfiles(center);
-        int footerY = height - 28;
-        Button reset = Button.builder(Component.translatable("screen.xporbtrails.reset"), b -> resetCurrentPage())
-                .bounds(center - 154, footerY, 98, 20).build();
+    @Override protected void init() {
+        profileButton = null;
+        shapeButton = null;
+        wide = width >= 680;
+        int total = Math.min(width - 24, wide ? 850 : 460);
+        panelX = (width - total) / 2;
+        panelWidth = wide ? total * 3 / 5 : total;
+        previewX = panelX + panelWidth + 12;
+        previewWidth = total - panelWidth - 12;
+        int tabWidth = (panelWidth - 12) / 4;
+        for (Page tab : Page.values()) {
+            Button button = Button.builder(text(tab.name().toLowerCase(Locale.ROOT)), b -> {
+                page = tab; scroll = 0; rebuildWidgets();
+            }).bounds(panelX + tab.ordinal() * (tabWidth + 4), 28, tabWidth, 20).build();
+            button.active = tab != page;
+            addRenderableWidget(button);
+        }
+        list = addRenderableWidget(new TrailSettingsList(panelX, 56, panelWidth, height - 96));
+        switch (page) {
+            case COMMON -> common();
+            case APPEARANCE -> appearance();
+            case ADVANCED -> advanced();
+            case PROFILES -> profiles();
+        }
+        list.setScrollAmount(scroll);
+        int fw = (panelWidth - 12) / 3;
+        Button reset = Button.builder(text("reset"), b -> resetPage()).bounds(panelX, height - 28, fw, 20).build();
         reset.active = page != Page.PROFILES;
         addRenderableWidget(reset);
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.open_preview"), b -> {
-            XpOrbTrailsClient.saveConfig();
-            minecraft.gui.setScreen(new TrailPreviewScreen(this));
-        }).bounds(center - 49, footerY, 98, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(center + 56, footerY, 98, 20).build());
+        addRenderableWidget(Button.builder(text("open_preview"), b -> {
+            rememberScroll(); XpOrbTrailsClient.saveConfig(); minecraft.gui.setScreen(preview);
+        }).bounds(panelX + fw + 6, height - 28, fw, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+                .bounds(panelX + 2 * (fw + 6), height - 28, fw, 20).build());
+        if (wide) preview.init(width, height);
     }
 
-    private void buildAppearance(int center) {
+    private void common() {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
-        int left = center - 154, right = center + 4;
-        addRenderableWidget(withTip(CycleButton.onOffBuilder(c.enabled).create(left, 58, 150, 20, Component.translatable("screen.xporbtrails.enabled"), (b, v) -> c.enabled = v), "screen.xporbtrails.enabled.tip"));
-        addRenderableWidget(withTip(CycleButton.onOffBuilder(c.additiveGlow).create(right, 58, 150, 20, Component.translatable("screen.xporbtrails.glow"), (b, v) -> c.additiveGlow = v), "screen.xporbtrails.glow.tip"));
-        startColor = colorBox(left, 90, "screen.xporbtrails.start_color", c.startColor, v -> c.startColor = v);
-        endColor = colorBox(right, 90, "screen.xporbtrails.end_color", c.endColor, v -> c.endColor = v);
-        addRenderableWidget(startColor);
-        addRenderableWidget(endColor);
-        addSlider(left, 122, "screen.xporbtrails.width", c.width, 0.05, 0.65, 2, v -> c.width = v);
-        addSlider(right, 122, "screen.xporbtrails.opacity", c.opacity, 0.05, 1.0, 2, v -> c.opacity = v);
+        toggle("enabled", c.enabled, v -> c.enabled = v);
+        profileButton = button(appliedProfile == null ? text("preset.custom") : appliedProfile, () -> {
+            List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
+            for (Profile p : allProfiles()) choices.add(new TrailChoiceScreen.Choice(p.name(), () -> apply(p)));
+            choose("profile", choices);
+        });
+        row("profile", profileButton);
+        section("trail");
+        slider("width", c.width, 0.02, 1.0, 2, v -> c.width = v);
+        slider("lifetime", c.lifetimeSeconds, 0.25, 10.0, 2, v -> c.lifetimeSeconds = v);
+        slider("effect_strength", c.effectStrength, 0.005, 2.0, 2, v -> c.effectStrength = v);
+        toggle("pickup_flash", c.pickupFlash, v -> c.pickupFlash = v);
+    }
 
-        List<String> modes = List.of("solid", "gradient", "rainbow");
-        addRenderableWidget(withTip(CycleButton.<String>builder(v -> Component.translatable("screen.xporbtrails.mode." + v), c.colorMode)
-                .withValues(modes).create(left, 154, 150, 20, Component.translatable("screen.xporbtrails.color_mode"),
-                        (b, value) -> { c.colorMode = value; rebuildWidgets(); }), "screen.xporbtrails.color_mode.tip"));
-        ConfigSlider rainbow = addSlider(right, 154, "screen.xporbtrails.rainbow_speed", c.rainbowSpeed, 0.02, 1.0, 2, v -> c.rainbowSpeed = v);
-        rainbow.active = "rainbow".equals(c.colorMode);
-
-        List<Preset> allPresets = new ArrayList<>(PRESETS);
-        for (TrailConfig.SavedPreset saved : c.savedPresets) allPresets.add(new Preset(saved.name, false, saved.startColor, saved.endColor));
-        if (presetIndex >= allPresets.size()) presetIndex = 0;
-        addRenderableWidget(CycleButton.<Preset>builder(p -> p.translated() ? Component.translatable(p.name()) : Component.literal(p.name()), allPresets.get(presetIndex)).withValues(allPresets)
-                .create(left, 186, 218, 20, Component.translatable("screen.xporbtrails.preset"), (b, preset) -> {
-                    presetIndex = allPresets.indexOf(preset);
-                    if (preset.start() >= 0) {
-                        c.startColor = preset.start(); c.endColor = preset.end();
-                        startColor.setValue(hex(c.startColor)); endColor.setValue(hex(c.endColor));
-                    }
-                }));
-        addRenderableWidget(withTip(Button.builder(Component.translatable("screen.xporbtrails.save_preset"), b -> {
-            if (c.savedPresets.size() < 12) {
-                c.savedPresets.add(new TrailConfig.SavedPreset(Component.translatable("screen.xporbtrails.saved_preset_name", c.savedPresets.size() + 1).getString(), c.startColor, c.endColor));
-                presetIndex = PRESETS.size() + c.savedPresets.size() - 1;
-                XpOrbTrailsClient.saveConfig();
-                rebuildWidgets();
+    private void appearance() {
+        TrailConfig c = XpOrbTrailsClient.CONFIG;
+        section("colors");
+        select("color_mode", "mode.", c.colorMode, List.of("solid", "gradient", "rainbow"), v -> c.colorMode = v);
+        if ("rainbow".equals(c.colorMode)) {
+            slider("rainbow_speed", c.rainbowSpeed, 0.02, 2.0, 2, v -> c.rainbowSpeed = v);
+        } else {
+            color("start_color", c.startColor, v -> c.startColor = v);
+            if ("gradient".equals(c.colorMode)) color("end_color", c.endColor, v -> c.endColor = v);
+            row("preset", button(text("choose"), () -> {
+                List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
+                for (Preset p : COLORS) choices.add(new TrailChoiceScreen.Choice(
+                        colorLabel(text("preset." + p.key()), p.start(), p.end()), () -> setColors(p.start(), p.end())));
+                for (TrailConfig.SavedPreset p : c.savedPresets) choices.add(new TrailChoiceScreen.Choice(
+                        colorLabel(Component.literal(p.name), p.startColor, p.endColor), () -> setColors(p.startColor, p.endColor)));
+                choose("preset", choices);
+            }));
+            Button save = button(text("save_preset"), () -> {
+                if (c.savedPresets.size() >= 12) return;
+                c.savedPresets.add(new TrailConfig.SavedPreset(
+                        Component.translatable("screen.xporbtrails.saved_preset_name", c.savedPresets.size() + 1).getString(), c.startColor, c.endColor));
+                refresh();
+            });
+            save.active = c.savedPresets.size() < 12;
+            row("saved_colors", save);
+        }
+        toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
+        section("shape");
+        shapeButton = button(shapeName(), () -> {
+            List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
+            for (Shape s : SHAPES) choices.add(new TrailChoiceScreen.Choice(text("shape." + s.key()), () -> {
+                c.tailWidthScale = s.tail(); c.middleWidthScale = s.middle(); c.headWidthScale = s.head(); changed();
+            }));
+            choose("shape_preset", choices);
+        });
+        row("shape_preset", shapeButton);
+        fold("custom_shape", customShape, () -> { customShape = !customShape; refresh(); });
+        if (customShape) {
+            slider("tail_width", c.tailWidthScale, 0.0, 1.5, 2, v -> c.tailWidthScale = v);
+            slider("middle_width", c.middleWidthScale, 0.0, 2.0, 2, v -> c.middleWidthScale = v);
+            slider("head_width", c.headWidthScale, 0.05, 2.0, 2, v -> c.headWidthScale = v);
+        }
+        section("pickup");
+        if (!c.pickupFlash) {
+            row("pickup_flash", button(text("enable"), () -> { c.pickupFlash = true; changed(); refresh(); }));
+        } else {
+            select("flash_style", "flash_style.", c.pickupFlashStyle, List.of("soft", "star", "ring"), v -> c.pickupFlashStyle = v);
+            fold("pickup_details", pickupDetails, () -> { pickupDetails = !pickupDetails; refresh(); });
+            if (pickupDetails) {
+                slider("pickup_flash_strength", c.pickupFlashStrength, 0.1, 2.0, 2, v -> c.pickupFlashStrength = v);
+                slider("pickup_flash_size", c.pickupFlashSize, 0.02, 8.34, 2, v -> c.pickupFlashSize = v);
+                slider("pickup_flash_duration", c.pickupFlashSeconds, 0.08, 1.0, 2, v -> c.pickupFlashSeconds = v);
             }
-        }).bounds(left + 222, 186, 86, 20).build(), "screen.xporbtrails.save_preset.tip"));
+        }
+        slider("pickup_fade", c.pickupFadeSeconds, 0.05, 3.0, 2, v -> c.pickupFadeSeconds = v);
     }
 
-    private void buildAnimation(int center) {
+    private void advanced() {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
-        int left = center - 154, right = center + 4;
-        addSlider(left, 58, "screen.xporbtrails.lifetime", c.lifetimeSeconds, 0.3, 6.0, 1, v -> c.lifetimeSeconds = v);
-        addSlider(right, 58, "screen.xporbtrails.pickup_fade", c.pickupFadeSeconds, 0.05, 1.5, 2, v -> c.pickupFadeSeconds = v);
-        addSlider(left, 90, "screen.xporbtrails.smoothness", c.smoothFlow, 0.0, 1.0, 2, v -> c.smoothFlow = v);
-        addSlider(right, 90, "screen.xporbtrails.motion_shift", c.motionShift, 0.0, 0.5, 2, v -> c.motionShift = v);
-        addSlider(left, 122, "screen.xporbtrails.camera_push", c.cameraPush, 0.0, 0.35, 2, v -> c.cameraPush = v);
-        addSlider(right, 122, "screen.xporbtrails.glow_strength", c.glowStrength, 0.1, 2.0, 2, v -> c.glowStrength = v);
-        addSlider(left, 154, "screen.xporbtrails.tail_width", c.tailWidthScale, 0.0, 1.0, 2, v -> c.tailWidthScale = v);
-        addSlider(right, 154, "screen.xporbtrails.middle_width", c.middleWidthScale, 0.0, 2.0, 2, v -> c.middleWidthScale = v);
-        addSlider(left, 186, "screen.xporbtrails.head_width", c.headWidthScale, 0.1, 2.0, 2, v -> c.headWidthScale = v);
-        if (shapeIndex >= SHAPES.size()) shapeIndex = 0;
-        addRenderableWidget(withTip(CycleButton.<ShapePreset>builder(
-                shape -> Component.translatable("screen.xporbtrails.shape." + shape.key()), SHAPES.get(shapeIndex))
-                .withValues(SHAPES).create(right, 186, 150, 20, Component.translatable("screen.xporbtrails.shape_preset"), (b, shape) -> {
-                    shapeIndex = SHAPES.indexOf(shape);
-                    if (shape.tail() >= 0.0) {
-                        c.tailWidthScale = shape.tail();
-                        c.middleWidthScale = shape.middle();
-                        c.headWidthScale = shape.head();
-                    }
-                    rebuildWidgets();
-                }), "screen.xporbtrails.shape_preset.tip"));
+        section("animation");
+        slider("smoothness", c.smoothFlow, 0.0, 1.0, 2, v -> c.smoothFlow = v);
+        fold("position_details", positionDetails, () -> { positionDetails = !positionDetails; refresh(); });
+        if (positionDetails) {
+            slider("motion_shift", c.motionShift, 0.0, 1.0, 2, v -> c.motionShift = v);
+            slider("camera_push", c.cameraPush, 0.0, 1.0, 2, v -> c.cameraPush = v);
+        }
+        section("performance");
+        slider("range", c.renderRange, 4.0, 128.0, 0, v -> c.renderRange = v);
+        slider("cap", c.trailCap, 8.0, 256.0, 0, v -> c.trailCap = (int) Math.round(v));
     }
 
-    private void buildPickup(int center) {
+    private void profiles() {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
-        int left = center - 154, right = center + 4;
-        addRenderableWidget(withTip(CycleButton.onOffBuilder(c.pickupFlash).create(left, 72, 150, 20,
-                Component.translatable("screen.xporbtrails.pickup_flash"), (b, v) -> { c.pickupFlash = v; rebuildWidgets(); }),
-                "screen.xporbtrails.pickup_flash.tip"));
-        ConfigSlider strength = addSlider(right, 72, "screen.xporbtrails.pickup_flash_strength", c.pickupFlashStrength, 0.1, 2.0, 2, v -> c.pickupFlashStrength = v);
-        ConfigSlider duration = addSlider(left, 104, "screen.xporbtrails.pickup_flash_duration", c.pickupFlashSeconds, 0.08, 1.0, 2, v -> c.pickupFlashSeconds = v);
-        ConfigSlider size = addSlider(right, 104, "screen.xporbtrails.pickup_flash_size", c.pickupFlashSize, 0.25, 2.0, 2, v -> c.pickupFlashSize = v);
-        List<String> styles = List.of("soft", "star", "ring");
-        CycleButton<String> style = withTip(CycleButton.<String>builder(v -> Component.translatable("screen.xporbtrails.flash_style." + v), c.pickupFlashStyle)
-                .withValues(styles).create(left, 136, 150, 20, Component.translatable("screen.xporbtrails.flash_style"),
-                        (b, value) -> c.pickupFlashStyle = value), "screen.xporbtrails.flash_style.tip");
-        addRenderableWidget(style);
-        strength.active = c.pickupFlash;
-        duration.active = c.pickupFlash;
-        size.active = c.pickupFlash;
-        style.active = c.pickupFlash;
-    }
-
-    private void buildProfiles(int center) {
-        TrailConfig c = XpOrbTrailsClient.CONFIG;
-        int left = center - 154;
-        List<ProfileChoice> profiles = allProfiles(c);
-        if (profileIndex >= profiles.size()) profileIndex = 0;
-        CycleButton<ProfileChoice> selector = CycleButton.<ProfileChoice>builder(this::profileName, profiles.get(profileIndex))
-                .withValues(profiles).create(left, 72, 218, 20, Component.translatable("screen.xporbtrails.profile"),
-                        (b, selected) -> { profileIndex = profiles.indexOf(selected); deleteArmedIndex = -1; rebuildWidgets(); });
-        addRenderableWidget(selector);
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.apply_profile"), b -> {
-            List<ProfileChoice> current = allProfiles(c);
-            if (profileIndex < current.size()) current.get(profileIndex).profile().applyTo(c);
-            XpOrbTrailsClient.saveConfig();
-            rebuildWidgets();
-        }).bounds(left + 222, 72, 86, 20).build());
-        Button save = withTip(Button.builder(Component.translatable("screen.xporbtrails.save_profile"), b -> {
-            if (c.savedProfiles.size() < 8) {
-                c.savedProfiles.add(new TrailConfig.SavedProfile(Component.translatable("screen.xporbtrails.saved_profile_name", c.savedProfiles.size() + 1).getString(), c));
-                profileIndex = 4 + c.savedProfiles.size() - 1;
-                XpOrbTrailsClient.saveConfig();
-                rebuildWidgets();
-            }
-        }).bounds(left, 104, 98, 20).build(), "screen.xporbtrails.save_profile.tip");
+        section("built_in_profiles");
+        List<Profile> profiles = allProfiles();
+        for (Profile p : profiles.subList(0, 4)) list.row(p.name(), button(text("apply_profile"), () -> { apply(p); refresh(); }));
+        section("saved_profiles");
+        for (Profile p : profiles.subList(4, profiles.size())) list.row(p.name(), button(text("manage_profile"), () -> {
+            selectedProfile = p.savedIndex(); deleteArmedIndex = -1; refresh();
+            list.setScrollAmount(list.maxScrollAmount());
+        }));
+        Button save = button(text("save_profile"), () -> {
+            if (c.savedProfiles.size() >= 8) return;
+            c.savedProfiles.add(new TrailConfig.SavedProfile(
+                    Component.translatable("screen.xporbtrails.saved_profile_name", c.savedProfiles.size() + 1).getString(), c));
+            selectedProfile = c.savedProfiles.size() - 1; deleteArmedIndex = -1; refresh();
+            list.setScrollAmount(list.maxScrollAmount());
+        });
         save.active = c.savedProfiles.size() < 8;
-        addRenderableWidget(save);
-        Button overwrite = withTip(Button.builder(Component.translatable("screen.xporbtrails.overwrite_profile"), b -> {
-            int savedIndex = profileIndex - 4;
-            if (savedIndex >= 0 && savedIndex < c.savedProfiles.size()) {
-                String name = c.savedProfiles.get(savedIndex).name;
-                c.savedProfiles.set(savedIndex, new TrailConfig.SavedProfile(name, c));
-                XpOrbTrailsClient.saveConfig();
-                rebuildWidgets();
-            }
-        }).bounds(left + 105, 104, 98, 20).build(), "screen.xporbtrails.overwrite_profile.tip");
-        overwrite.active = profileIndex >= 4;
-        addRenderableWidget(overwrite);
-        Component deleteLabel = deleteArmedIndex == profileIndex
-                ? Component.translatable("screen.xporbtrails.confirm_delete_profile")
-                : Component.translatable("screen.xporbtrails.delete_profile");
-        Button delete = withTip(Button.builder(deleteLabel, b -> {
-            int savedIndex = profileIndex - 4;
-            if (savedIndex >= 0 && savedIndex < c.savedProfiles.size()) {
-                if (deleteArmedIndex != profileIndex) {
-                    deleteArmedIndex = profileIndex;
-                    rebuildWidgets();
-                    return;
-                }
-                c.savedProfiles.remove(savedIndex);
-                profileIndex = 0;
-                deleteArmedIndex = -1;
-                XpOrbTrailsClient.saveConfig();
-                rebuildWidgets();
-            }
-        }).bounds(left + 210, 104, 98, 20).build(), "screen.xporbtrails.delete_profile.tip");
-        delete.active = profileIndex >= 4;
-        addRenderableWidget(delete);
-
-        int savedIndex = profileIndex - 4;
-        EditBox rename = new EditBox(font, left, 136, 218, 20, Component.translatable("screen.xporbtrails.profile_name"));
-        rename.setMaxLength(32);
-        if (savedIndex >= 0 && savedIndex < c.savedProfiles.size()) rename.setValue(c.savedProfiles.get(savedIndex).name);
-        rename.active = savedIndex >= 0;
-        addRenderableWidget(rename);
-        Button renameButton = withTip(Button.builder(Component.translatable("screen.xporbtrails.rename_profile"), b -> {
-            int index = profileIndex - 4;
-            String value = rename.getValue().trim();
-            if (index >= 0 && index < c.savedProfiles.size() && !value.isEmpty()) {
-                c.savedProfiles.get(index).name = value;
-                XpOrbTrailsClient.saveConfig();
-                rebuildWidgets();
-            }
-        }).bounds(left + 222, 136, 86, 20).build(), "screen.xporbtrails.rename_profile.tip");
-        renameButton.active = savedIndex >= 0;
-        addRenderableWidget(renameButton);
+        list.row(Component.empty(), save);
+        if (selectedProfile < 0 || selectedProfile >= c.savedProfiles.size()) return;
+        TrailConfig.SavedProfile selected = c.savedProfiles.get(selectedProfile);
+        section("edit_selected_profile");
+        list.row(Component.empty(), button(text("apply_profile"), () -> {
+            apply(new Profile(Component.literal(selected.name), selected, selectedProfile)); refresh();
+        }));
+        EditBox name = new EditBox(font, 0, 0, 150, 20, text("profile_name"));
+        name.setMaxLength(32); name.setValue(selected.name);
+        row("profile_name", name);
+        Button rename = button(text("rename_profile"), () -> {
+            String value = name.getValue().trim();
+            if (value.isEmpty()) return;
+            if (appliedProfile != null && appliedProfile.getString().equals(selected.name)) appliedProfile = Component.literal(value);
+            selected.name = value;
+            refresh();
+        });
+        name.setResponder(value -> rename.active = !value.isBlank());
+        list.row(Component.empty(), rename);
+        list.row(Component.empty(), button(text("overwrite_profile"), () -> {
+            c.savedProfiles.set(selectedProfile, new TrailConfig.SavedProfile(selected.name, c)); refresh();
+        }));
+        list.row(Component.empty(), button(text(deleteArmedIndex == selectedProfile ? "confirm_delete_profile" : "delete_profile"), () -> {
+            if (deleteArmedIndex != selectedProfile) { deleteArmedIndex = selectedProfile; refresh(); return; }
+            c.savedProfiles.remove(selectedProfile); selectedProfile = -1; deleteArmedIndex = -1; appliedProfile = null; refresh();
+        }));
     }
 
-    private List<ProfileChoice> allProfiles(TrailConfig c) {
-        List<ProfileChoice> result = new ArrayList<>();
-        TrailConfig standard = new TrailConfig();
-        result.add(new ProfileChoice("screen.xporbtrails.profile.standard", true, new TrailConfig.SavedProfile("Standard", standard), false));
+    private List<Profile> allProfiles() {
+        List<Profile> result = new ArrayList<>();
+        result.add(profile("standard", new TrailConfig()));
         TrailConfig soft = new TrailConfig();
-        soft.additiveGlow = false; soft.width = 0.18; soft.opacity = 0.58; soft.glowStrength = 0.75;
-        soft.pickupFlashStrength = 0.35; soft.pickupFlashSize = 0.48;
-        result.add(new ProfileChoice("screen.xporbtrails.profile.soft", true, new TrailConfig.SavedProfile("Soft", soft), false));
+        soft.additiveGlow = false; soft.width = 0.18; soft.effectStrength = 0.58 * 0.75;
+        soft.pickupFlashStrength = 0.35; soft.pickupFlashSize = 0.48 * 0.18 / 0.24;
+        result.add(profile("soft", soft));
         TrailConfig neon = new TrailConfig();
-        neon.startColor = 0x62F4FF; neon.endColor = 0xB45CFF; neon.width = 0.27; neon.opacity = 0.9; neon.glowStrength = 1.3;
-        neon.tailWidthScale = 0.08; neon.middleWidthScale = 1.2; neon.headWidthScale = 0.55; neon.pickupFlashStyle = "star"; neon.pickupFlashStrength = 0.9;
-        result.add(new ProfileChoice("screen.xporbtrails.profile.neon", true, new TrailConfig.SavedProfile("Neon", neon), false));
+        neon.startColor = 0x62F4FF; neon.endColor = 0xB45CFF; neon.width = 0.27; neon.effectStrength = 0.9 * 1.3;
+        neon.tailWidthScale = 0.08; neon.middleWidthScale = 1.2; neon.headWidthScale = 0.55;
+        neon.pickupFlashStyle = "star"; neon.pickupFlashStrength = 0.9; neon.pickupFlashSize *= 0.27 / 0.24;
+        result.add(profile("neon", neon));
         TrailConfig rainbow = new TrailConfig();
-        rainbow.colorMode = "rainbow"; rainbow.rainbowSpeed = 0.22; rainbow.tailWidthScale = 0.1; rainbow.middleWidthScale = 1.1; rainbow.headWidthScale = 0.5;
+        rainbow.colorMode = "rainbow"; rainbow.rainbowSpeed = 0.22;
+        rainbow.tailWidthScale = 0.1; rainbow.middleWidthScale = 1.1; rainbow.headWidthScale = 0.5;
         rainbow.pickupFlashStyle = "ring"; rainbow.pickupFlashStrength = 0.7;
-        result.add(new ProfileChoice("screen.xporbtrails.profile.rainbow", true, new TrailConfig.SavedProfile("Rainbow", rainbow), false));
-        for (TrailConfig.SavedProfile saved : c.savedProfiles) result.add(new ProfileChoice(saved.name, false, saved, true));
+        result.add(profile("rainbow", rainbow));
+        var saved = XpOrbTrailsClient.CONFIG.savedProfiles;
+        for (int i = 0; i < saved.size(); i++) result.add(new Profile(Component.literal(saved.get(i).name), saved.get(i), i));
         return result;
     }
-
-    private Component profileName(ProfileChoice choice) {
-        return choice.translated() ? Component.translatable(choice.label()) : Component.literal(choice.label());
+    private Profile profile(String key, TrailConfig config) { return new Profile(text("profile." + key), new TrailConfig.SavedProfile(key, config), -1); }
+    private void apply(Profile p) {
+        p.settings().applyTo(XpOrbTrailsClient.CONFIG); selectedProfile = p.savedIndex(); appliedProfile = p.name(); deleteArmedIndex = -1;
     }
 
-    private void resetCurrentPage() {
-        TrailConfig c = XpOrbTrailsClient.CONFIG;
-        TrailConfig defaults = new TrailConfig();
+    private void resetPage() {
+        TrailConfig c = XpOrbTrailsClient.CONFIG, d = new TrailConfig();
         switch (page) {
+            case COMMON -> {
+                c.enabled = d.enabled; c.width = d.width; c.lifetimeSeconds = d.lifetimeSeconds;
+                c.effectStrength = d.effectStrength; c.pickupFlash = d.pickupFlash;
+            }
             case APPEARANCE -> {
-                c.enabled = defaults.enabled;
-                c.additiveGlow = defaults.additiveGlow;
-                c.startColor = defaults.startColor;
-                c.endColor = defaults.endColor;
-                c.width = defaults.width;
-                c.opacity = defaults.opacity;
-                c.colorMode = defaults.colorMode;
-                c.rainbowSpeed = defaults.rainbowSpeed;
-                presetIndex = 0;
+                c.colorMode = d.colorMode; c.startColor = d.startColor; c.endColor = d.endColor;
+                c.rainbowSpeed = d.rainbowSpeed; c.additiveGlow = d.additiveGlow;
+                c.tailWidthScale = d.tailWidthScale; c.middleWidthScale = d.middleWidthScale; c.headWidthScale = d.headWidthScale;
+                c.pickupFlashStyle = d.pickupFlashStyle; c.pickupFlashStrength = d.pickupFlashStrength;
+                c.pickupFlashSeconds = d.pickupFlashSeconds; c.pickupFlashSize = d.pickupFlashSize; c.pickupFadeSeconds = d.pickupFadeSeconds;
             }
-            case ANIMATION -> {
-                c.lifetimeSeconds = defaults.lifetimeSeconds;
-                c.pickupFadeSeconds = defaults.pickupFadeSeconds;
-                c.smoothFlow = defaults.smoothFlow;
-                c.motionShift = defaults.motionShift;
-                c.cameraPush = defaults.cameraPush;
-                c.glowStrength = defaults.glowStrength;
-                c.tailWidthScale = defaults.tailWidthScale;
-                c.middleWidthScale = defaults.middleWidthScale;
-                c.headWidthScale = defaults.headWidthScale;
-                shapeIndex = 0;
+            case ADVANCED -> {
+                c.smoothFlow = d.smoothFlow; c.motionShift = d.motionShift; c.cameraPush = d.cameraPush;
+                c.renderRange = d.renderRange; c.trailCap = d.trailCap;
             }
-            case PICKUP -> {
-                c.pickupFlash = defaults.pickupFlash;
-                c.pickupFlashStyle = defaults.pickupFlashStyle;
-                c.pickupFlashStrength = defaults.pickupFlashStrength;
-                c.pickupFlashSeconds = defaults.pickupFlashSeconds;
-                c.pickupFlashSize = defaults.pickupFlashSize;
-            }
-            case PERFORMANCE -> {
-                c.renderRange = defaults.renderRange;
-                c.trailCap = defaults.trailCap;
-            }
-            case PROFILES -> { }
+            case PROFILES -> { return; }
         }
-        XpOrbTrailsClient.saveConfig();
-        rebuildWidgets();
+        changed(); refresh();
     }
 
-    private void buildPerformance(int center) {
+    private void row(String key, AbstractWidget widget) {
+        widget.setTooltip(Tooltip.create(text(key).append("\n").append(text(key + ".tip"))));
+        list.row(text(key), widget);
+    }
+    private void section(String key) { list.section(text(key)); }
+    private Button button(Component label, Runnable action) { return Button.builder(label, b -> action.run()).bounds(0, 0, 150, 20).build(); }
+    private void fold(String key, boolean expanded, Runnable action) { row(key, button(text(expanded ? "collapse" : "expand"), action)); }
+    private void toggle(String key, boolean value, Consumer<Boolean> setter) {
+        row(key, CycleButton.onOffBuilder(value).displayOnlyValue().create(0, 0, 150, 20, text(key), (b, v) -> { setter.accept(v); changed(); }));
+    }
+    private void slider(String key, double value, double min, double max, int decimals, DoubleConsumer setter) {
+        row(key, new ConfigSlider(text(key), value, min, max, decimals, v -> { setter.accept(v); changed(); }));
+    }
+    private void select(String key, String prefix, String current, List<String> values, Consumer<String> setter) {
+        row(key, button(text(prefix + current), () -> {
+            List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
+            for (String value : values) choices.add(new TrailChoiceScreen.Choice(text(prefix + value), () -> { setter.accept(value); changed(); }));
+            choose(key, choices);
+        }));
+    }
+    private void color(String key, int value, IntConsumer setter) {
+        row(key, button(colorLabel(Component.literal(String.format(Locale.ROOT, "#%06X", value & 0xFFFFFF)), value, value), () -> {
+            rememberScroll();
+            minecraft.gui.setScreen(new ColorPickerScreen(this, value, v -> { setter.accept(v); changed(); }));
+        }));
+    }
+    private static Component colorLabel(Component label, int start, int end) {
+        return Component.literal("■ ").withStyle(s -> s.withColor(start))
+                .append(Component.literal("■ ").withStyle(s -> s.withColor(end)))
+                .append(label.copy().withStyle(s -> s.withColor(0xFFFFFF)));
+    }
+    private void setColors(int start, int end) { XpOrbTrailsClient.CONFIG.startColor = start; XpOrbTrailsClient.CONFIG.endColor = end; changed(); }
+    private void choose(String key, List<TrailChoiceScreen.Choice> choices) { rememberScroll(); minecraft.gui.setScreen(new TrailChoiceScreen(this, text(key), choices)); }
+    private Component shapeName() {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
-        int left = center - 154, right = center + 4;
-        addSlider(left, 72, "screen.xporbtrails.range", c.renderRange, 8.0, 96.0, 0, v -> c.renderRange = v);
-        addSlider(right, 72, "screen.xporbtrails.cap", c.trailCap, 8.0, 256.0, 0, v -> c.trailCap = (int) Math.round(v));
+        return text("shape." + SHAPES.stream().filter(s -> s.tail() == c.tailWidthScale
+                && s.middle() == c.middleWidthScale && s.head() == c.headWidthScale)
+                .map(Shape::key).findFirst().orElse("custom"));
     }
-
-    private EditBox colorBox(int x, int y, String label, int color, java.util.function.IntConsumer setter) {
-        EditBox box = new EditBox(font, x, y, 150, 20, Component.translatable(label));
-        box.setMaxLength(7);
-        box.setValue(hex(color));
-        box.setResponder(text -> {
-            String value = text.startsWith("#") ? text.substring(1) : text;
-            if (value.matches("[0-9a-fA-F]{6}")) setter.accept(Integer.parseInt(value, 16));
-        });
-        return box;
+    private void changed() {
+        appliedProfile = null; deleteArmedIndex = -1;
+        if (profileButton != null) profileButton.setMessage(text("preset.custom"));
+        if (shapeButton != null) shapeButton.setMessage(shapeName());
     }
-
-    private ConfigSlider addSlider(int x, int y, String key, double current, double min, double max, int decimals, DoubleConsumer setter) {
-        ConfigSlider slider = new ConfigSlider(x, y, 150, 20, key, current, min, max, decimals, setter);
-        slider.setTooltip(Tooltip.create(Component.translatable(key + ".tip")));
-        addRenderableWidget(slider);
-        return slider;
-    }
-
-    private static <T extends AbstractWidget> T withTip(T widget, String key) {
-        widget.setTooltip(Tooltip.create(Component.translatable(key)));
-        return widget;
-    }
-
-    private void switchPage(Page next) { if (page != next) { page = next; rebuildWidgets(); } }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
-        if (page == Page.APPEARANCE) {
-            int center = width / 2;
-            if (inside(event.x(), event.y(), center - 178, 90, 20, 20)) {
-                minecraft.gui.setScreen(new ColorPickerScreen(this, XpOrbTrailsClient.CONFIG.startColor,
-                        value -> XpOrbTrailsClient.CONFIG.startColor = value));
-                return true;
-            }
-            if (inside(event.x(), event.y(), center + 162, 90, 20, 20)) {
-                minecraft.gui.setScreen(new ColorPickerScreen(this, XpOrbTrailsClient.CONFIG.endColor,
-                        value -> XpOrbTrailsClient.CONFIG.endColor = value));
-                return true;
-            }
-        }
-        return super.mouseClicked(event, doubled);
-    }
-
-    @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+    private void rememberScroll() { if (list != null) scroll = list.scrollAmount(); }
+    private void refresh() { rememberScroll(); XpOrbTrailsClient.saveConfig(); rebuildWidgets(); }
+    @Override public void resize(int width, int height) { rememberScroll(); super.resize(width, height); }
+    @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         graphics.centeredText(font, title, width / 2, 10, 0xFFFFFFFF);
-        if (page == Page.APPEARANCE) {
-            int center = width / 2;
-            graphics.text(font, Component.translatable("screen.xporbtrails.start_color"), center - 154, 80, 0xFFA0A0A0);
-            graphics.text(font, Component.translatable("screen.xporbtrails.end_color"), center + 4, 80, 0xFFA0A0A0);
-            graphics.fill(center - 178, 90, center - 158, 110, 0xFF000000 | XpOrbTrailsClient.CONFIG.startColor);
-            graphics.outline(center - 178, 90, 20, 20, 0xFFFFFFFF);
-            graphics.fill(center + 162, 90, center + 182, 110, 0xFF000000 | XpOrbTrailsClient.CONFIG.endColor);
-            graphics.outline(center + 162, 90, 20, 20, 0xFFFFFFFF);
-        }
+        if (wide) preview.extractPreview(graphics, previewX, 56, previewWidth, height - 96, true);
     }
-
-    @Override
-    public void onClose() {
-        XpOrbTrailsClient.saveConfig();
-        if (minecraft != null) minecraft.gui.setScreen(parent);
-    }
-
+    @Override public void onClose() { XpOrbTrailsClient.saveConfig(); minecraft.gui.setScreen(parent); }
     @Override public boolean isPauseScreen() { return false; }
-    private static boolean inside(double x, double y, int bx, int by, int bw, int bh) {
-        return x >= bx && x < bx + bw && y >= by && y < by + bh;
-    }
-    private static String hex(int color) { return String.format(Locale.ROOT, "#%06X", color & 0xFFFFFF); }
 
     private static final class ConfigSlider extends AbstractSliderButton {
-        private final String key; private final double min, max; private final int decimals; private final DoubleConsumer setter;
-        ConfigSlider(int x, int y, int width, int height, String key, double current, double min, double max, int decimals, DoubleConsumer setter) {
-            super(x, y, width, height, Component.empty(), (current - min) / (max - min));
-            this.key = key; this.min = min; this.max = max; this.decimals = decimals; this.setter = setter; updateMessage();
+        private final Component label;
+        private final double min, max;
+        private final int decimals;
+        private final DoubleConsumer setter;
+        ConfigSlider(Component label, double current, double min, double max, int decimals, DoubleConsumer setter) {
+            super(0, 0, 150, 20, Component.empty(), Math.max(0, Math.min(1, (current - min) / (max - min))));
+            this.label = label; this.min = min; this.max = max; this.decimals = decimals; this.setter = setter; updateMessage();
         }
         private double actual() { return min + value * (max - min); }
-        @Override protected void updateMessage() { setMessage(Component.translatable(key).append(": " + String.format(Locale.ROOT, "%." + decimals + "f", actual()))); }
+        @Override protected void updateMessage() { setMessage(Component.literal(String.format(Locale.ROOT, "%." + decimals + "f", actual()))); }
         @Override protected void applyValue() { setter.accept(actual()); }
+        @Override protected MutableComponent createNarrationMessage() { return label.copy().append(": ").append(getMessage()); }
     }
 }

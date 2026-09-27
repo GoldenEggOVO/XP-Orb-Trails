@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class TrailConfig {
-    public int configVersion = 8;
+    public int configVersion = 9;
     public boolean enabled = true;
     public int trailCap = 96;
     public double renderRange = 36.0;
     public double lifetimeSeconds = 2.6;
     public double width = 0.24;
     public double opacity = 0.78;
+    public double effectStrength = 0.78;
     public double pointSpacing = 0.18;
     public double groundOffset = 0.025;
     public double lift = 0.18;
@@ -92,12 +93,19 @@ public final class TrailConfig {
         if (!"solid".equals(colorMode) && !"gradient".equals(colorMode) && !"rainbow".equals(colorMode)) colorMode = "gradient";
         rainbowSpeed = Math.max(0.02, Math.min(2.0, rainbowSpeed));
         glowStrength = Math.max(0.1, Math.min(2.0, glowStrength));
+        if (configVersion < 9) {
+            // Preserve the old alpha product and flash radius, then decouple their controls.
+            effectStrength = opacity * glowStrength;
+            pickupFlashSize = Math.max(0.25, Math.min(2.0, pickupFlashSize)) * width / 0.24;
+            configVersion = 9;
+        }
+        effectStrength = Math.max(0.005, Math.min(2.0, effectStrength));
         tailWidthScale = Math.max(0.0, Math.min(1.5, tailWidthScale));
         middleWidthScale = Math.max(0.0, Math.min(2.0, middleWidthScale));
         headWidthScale = Math.max(0.05, Math.min(2.0, headWidthScale));
         pickupFlashStrength = Math.max(0.1, Math.min(2.0, pickupFlashStrength));
         pickupFlashSeconds = Math.max(0.08, Math.min(1.0, pickupFlashSeconds));
-        pickupFlashSize = Math.max(0.25, Math.min(2.0, pickupFlashSize));
+        pickupFlashSize = Math.max(0.02, Math.min(8.34, pickupFlashSize));
         if (!"soft".equals(pickupFlashStyle) && !"star".equals(pickupFlashStyle) && !"ring".equals(pickupFlashStyle)) pickupFlashStyle = "soft";
         if (savedPresets == null) savedPresets = new ArrayList<>();
         savedPresets.removeIf(p -> p == null || p.name == null || p.name.isBlank());
@@ -105,6 +113,7 @@ public final class TrailConfig {
         if (savedProfiles == null) savedProfiles = new ArrayList<>();
         savedProfiles.removeIf(p -> p == null || p.name == null || p.name.isBlank());
         if (savedProfiles.size() > 8) savedProfiles = new ArrayList<>(savedProfiles.subList(0, 8));
+        for (SavedProfile profile : savedProfiles) profile.migrate();
         return this;
     }
 
@@ -116,6 +125,7 @@ public final class TrailConfig {
         lifetimeSeconds = other.lifetimeSeconds;
         width = other.width;
         opacity = other.opacity;
+        effectStrength = other.effectStrength;
         pointSpacing = other.pointSpacing;
         groundOffset = other.groundOffset;
         lift = other.lift;
@@ -161,6 +171,8 @@ public final class TrailConfig {
 
     public static final class SavedProfile {
         public String name;
+        public int settingsVersion;
+        public double effectStrength = 0.78;
         public boolean enabled, additiveGlow, pickupFlash;
         public int trailCap, startColor, endColor;
         public double renderRange, lifetimeSeconds, width, opacity, motionShift, cameraPush, smoothFlow,
@@ -174,6 +186,9 @@ public final class TrailConfig {
             capture(c);
         }
         public SavedProfile(SavedProfile other) {
+            other.migrate();
+            settingsVersion = other.settingsVersion;
+            effectStrength = other.effectStrength;
             this.name = other.name;
             enabled = other.enabled; additiveGlow = other.additiveGlow; pickupFlash = other.pickupFlash;
             trailCap = other.trailCap; startColor = other.startColor; endColor = other.endColor;
@@ -185,6 +200,8 @@ public final class TrailConfig {
             colorMode = other.colorMode; pickupFlashStyle = other.pickupFlashStyle;
         }
         private void capture(TrailConfig c) {
+            settingsVersion = 9;
+            effectStrength = c.effectStrength;
             enabled = c.enabled; additiveGlow = c.additiveGlow; pickupFlash = c.pickupFlash;
             trailCap = c.trailCap; startColor = c.startColor; endColor = c.endColor;
             renderRange = c.renderRange; lifetimeSeconds = c.lifetimeSeconds; width = c.width; opacity = c.opacity;
@@ -195,6 +212,9 @@ public final class TrailConfig {
             colorMode = c.colorMode; pickupFlashStyle = c.pickupFlashStyle;
         }
         public void applyTo(TrailConfig c) {
+            migrate();
+            c.configVersion = 9;
+            c.effectStrength = effectStrength;
             c.enabled = enabled; c.additiveGlow = additiveGlow; c.pickupFlash = pickupFlash;
             c.trailCap = trailCap; c.startColor = startColor; c.endColor = endColor;
             c.renderRange = renderRange; c.lifetimeSeconds = lifetimeSeconds; c.width = width; c.opacity = opacity;
@@ -204,6 +224,15 @@ public final class TrailConfig {
             c.pickupFlashStrength = pickupFlashStrength; c.pickupFlashSeconds = pickupFlashSeconds; c.pickupFlashSize = pickupFlashSize;
             c.colorMode = colorMode; c.pickupFlashStyle = pickupFlashStyle;
             c.sanitized();
+        }
+
+        private void migrate() {
+            if (settingsVersion >= 9) return;
+            effectStrength = Math.max(0.05, Math.min(1.0, opacity))
+                    * Math.max(0.1, Math.min(2.0, glowStrength));
+            pickupFlashSize = Math.max(0.25, Math.min(2.0, pickupFlashSize))
+                    * Math.max(0.02, Math.min(1.0, width)) / 0.24;
+            settingsVersion = 9;
         }
     }
 }
