@@ -81,6 +81,7 @@ public final class TrailPreviewScreen extends Screen {
                 .append(": ").append(Component.translatable("screen.xporbtrails.flash_style." + c.pickupFlashStyle));
         graphics.text(font, mode, x + 10, y + 9, 0xFFBFD9C8);
         graphics.text(font, flash, x + 10, y + 21, 0xFF8EB59B);
+        graphics.text(font, TrailConfigScreen.crossSectionLabel(c.crossSectionSides), x + 10, y + 33, 0xFF8EB59B);
 
         int samples = Math.max(36, Math.min(90, w / 6));
         double visibleLength = Math.min(1.0, 0.28 + c.lifetimeSeconds / 7.5);

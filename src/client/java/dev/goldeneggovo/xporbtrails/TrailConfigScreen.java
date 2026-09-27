@@ -147,6 +147,16 @@ public final class TrailConfigScreen extends Screen {
         }
         toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
         section("shape");
+        row("cross_section", button(crossSectionLabel(c.crossSectionSides), () -> {
+            List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
+            for (int sides = 2; sides <= 32; sides++) {
+                int value = sides;
+                choices.add(new TrailChoiceScreen.Choice(crossSectionLabel(value), () -> {
+                    c.crossSectionSides = value; changed();
+                }));
+            }
+            choose("cross_section", choices);
+        }));
         shapeButton = button(shapeName(), () -> {
             List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
             for (Shape s : SHAPES) choices.add(new TrailChoiceScreen.Choice(text("shape." + s.key()), () -> {
@@ -273,6 +283,7 @@ public final class TrailConfigScreen extends Screen {
                 c.colorMode = d.colorMode; c.startColor = d.startColor; c.endColor = d.endColor;
                 c.rainbowSpeed = d.rainbowSpeed; c.additiveGlow = d.additiveGlow;
                 c.tailWidthScale = d.tailWidthScale; c.middleWidthScale = d.middleWidthScale; c.headWidthScale = d.headWidthScale;
+                c.crossSectionSides = d.crossSectionSides;
                 c.pickupFlashStyle = d.pickupFlashStyle; c.pickupFlashStrength = d.pickupFlashStrength;
                 c.pickupFlashSeconds = d.pickupFlashSeconds; c.pickupFlashSize = d.pickupFlashSize; c.pickupFadeSeconds = d.pickupFadeSeconds;
             }
@@ -316,6 +327,10 @@ public final class TrailConfigScreen extends Screen {
         return Component.literal("■ ").withStyle(s -> s.withColor(start))
                 .append(Component.literal("■ ").withStyle(s -> s.withColor(end)))
                 .append(label.copy().withStyle(s -> s.withColor(0xFFFFFF)));
+    }
+    static Component crossSectionLabel(int sides) {
+        return Component.translatable("screen.xporbtrails.cross_section." +
+                (sides == 2 ? "flat" : sides == 32 ? "round" : "sides"), sides);
     }
     private void setColors(int start, int end) { XpOrbTrailsClient.CONFIG.startColor = start; XpOrbTrailsClient.CONFIG.endColor = end; changed(); }
     private void choose(String key, List<TrailChoiceScreen.Choice> choices) { rememberScroll(); minecraft.gui.setScreen(new TrailChoiceScreen(this, text(key), choices)); }

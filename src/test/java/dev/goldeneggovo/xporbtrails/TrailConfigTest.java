@@ -9,6 +9,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TrailConfigTest {
     @Test
+    void crossSectionSurvivesProfilesAndReloadAndClampsInvalidValues() {
+        Gson gson = new Gson();
+        TrailConfig config = gson.fromJson("{\"crossSectionSides\":32}", TrailConfig.class).sanitized();
+        assertEquals(32, gson.toJsonTree(config).getAsJsonObject().get("crossSectionSides").getAsInt());
+        TrailConfig copy = new TrailConfig();
+        copy.copyFrom(config);
+        TrailConfig.SavedProfile profile = new TrailConfig.SavedProfile("Round", copy);
+        profile = gson.fromJson(gson.toJson(new TrailConfig.SavedProfile(profile)), TrailConfig.SavedProfile.class);
+        profile.applyTo(copy);
+        assertEquals(32, gson.toJsonTree(copy).getAsJsonObject().get("crossSectionSides").getAsInt());
+        for (int value : new int[]{-1, 2, 3, 8, 32, 100}) {
+            TrailConfig loaded = gson.fromJson("{\"crossSectionSides\":" + value + "}", TrailConfig.class).sanitized();
+            assertEquals(Math.max(2, Math.min(32, value)), gson.toJsonTree(loaded).getAsJsonObject().get("crossSectionSides").getAsInt());
+        }
+        assertEquals(3, gson.toJsonTree(gson.fromJson("{}", TrailConfig.class)).getAsJsonObject().get("crossSectionSides").getAsInt());
+    }
+
+    @Test
     void migratesLegacyStrengthAndFlashSizeWithoutChangingTheEffect() {
         Gson gson = new Gson();
         TrailConfig config = gson.fromJson("""

@@ -10,6 +10,7 @@ public final class TrailConfig {
     public double renderRange = 36.0;
     public double lifetimeSeconds = 2.6;
     public double width = 0.24;
+    public int crossSectionSides = 3;
     public double opacity = 0.78;
     public double effectStrength = 0.78;
     public double pointSpacing = 0.18;
@@ -82,6 +83,7 @@ public final class TrailConfig {
         renderRange = Math.max(4.0, Math.min(128.0, renderRange));
         lifetimeSeconds = Math.max(0.25, Math.min(10.0, lifetimeSeconds));
         width = Math.max(0.02, Math.min(1.0, width));
+        crossSectionSides = Math.max(2, Math.min(32, crossSectionSides));
         opacity = Math.max(0.05, Math.min(1.0, opacity));
         pointSpacing = Math.max(0.03, Math.min(1.0, pointSpacing));
         groundHug = Math.max(0.0, Math.min(1.0, groundHug));
@@ -124,6 +126,7 @@ public final class TrailConfig {
         renderRange = other.renderRange;
         lifetimeSeconds = other.lifetimeSeconds;
         width = other.width;
+        crossSectionSides = other.crossSectionSides;
         opacity = other.opacity;
         effectStrength = other.effectStrength;
         pointSpacing = other.pointSpacing;
@@ -172,6 +175,7 @@ public final class TrailConfig {
     public static final class SavedProfile {
         public String name;
         public int settingsVersion;
+        public int crossSectionSides = 3;
         public double effectStrength = 0.78;
         public boolean enabled, additiveGlow, pickupFlash;
         public int trailCap, startColor, endColor;
@@ -188,6 +192,7 @@ public final class TrailConfig {
         public SavedProfile(SavedProfile other) {
             other.migrate();
             settingsVersion = other.settingsVersion;
+            crossSectionSides = other.crossSectionSides;
             effectStrength = other.effectStrength;
             this.name = other.name;
             enabled = other.enabled; additiveGlow = other.additiveGlow; pickupFlash = other.pickupFlash;
@@ -200,6 +205,7 @@ public final class TrailConfig {
             colorMode = other.colorMode; pickupFlashStyle = other.pickupFlashStyle;
         }
         private void capture(TrailConfig c) {
+            crossSectionSides = c.crossSectionSides;
             settingsVersion = 9;
             effectStrength = c.effectStrength;
             enabled = c.enabled; additiveGlow = c.additiveGlow; pickupFlash = c.pickupFlash;
@@ -213,6 +219,7 @@ public final class TrailConfig {
         }
         public void applyTo(TrailConfig c) {
             migrate();
+            c.crossSectionSides = crossSectionSides;
             c.configVersion = 9;
             c.effectStrength = effectStrength;
             c.enabled = enabled; c.additiveGlow = additiveGlow; c.pickupFlash = pickupFlash;
