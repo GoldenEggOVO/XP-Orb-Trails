@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — Minecraft 26.2
+## 1.0.2 — Minecraft 26.2
 
 - Reorganize settings into scrollable Common, Appearance, Advanced, and My Profiles pages.
 - Replace cycling presets with selection lists and collapse advanced detail controls.

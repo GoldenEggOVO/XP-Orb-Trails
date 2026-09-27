@@ -65,7 +65,7 @@ Compilation and unit tests do not replace these client checks.
    separately for multiple Minecraft versions.
 4. Publish a GitHub Release titled `v<mod-version> for <minecraft-version>` with
    concise English change notes and the installable JAR. Keep the Minecraft
-   version in its filename, for example `xp-orb-trails-1.1.0+mc26.3.jar`.
+   version in its filename, for example `xp-orb-trails-1.0.2+mc26.2.jar`.
 5. Download the published JAR and compare its SHA-256 with the local build.
 
 Use Git and GitHub CLI for publishing. There are no GitHub Actions workflows.
