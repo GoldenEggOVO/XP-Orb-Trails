@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Minecraft 26.3
+
+- Keep trails continuous when the number of experience orbs exceeds the trail limit.
+- Skip distant orbs before tracking and release their trail slots when they leave range.
+- Clear trails when disabled, when changing worlds, and when disconnecting.
+- Restore the pickup flash style when resetting the pickup settings page.
+- Fit the color picker controls within smaller windows and larger GUI scales.
+
 ## 1.1.0 — Minecraft 26.3
 
 - Update Minecraft compatibility to 26.3, with Fabric API 0.161.0+26.3 and

@@ -59,6 +59,7 @@ public final class XpOrbTrailsClient implements ClientModInitializer {
         KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.xporbtrails.open_settings", InputConstants.UNKNOWN.getValue(), category));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            TrailRenderer.updateWorld(client.level);
             while (openSettings.consumeClick()) client.gui.setScreen(createConfigScreen(client.gui.screen()));
         });
     }

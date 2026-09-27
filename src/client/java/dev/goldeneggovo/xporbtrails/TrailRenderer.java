@@ -58,24 +58,48 @@ public final class TrailRenderer {
 
     private TrailRenderer() { }
 
-    public static synchronized void track(ExperienceOrb orb) {
-        TrailConfig cfg = XpOrbTrailsClient.CONFIG;
-        if (!cfg.enabled || !(orb.level() instanceof ClientLevel level)) return;
+    public static synchronized void updateWorld(ClientLevel level) {
+        if (!XpOrbTrailsClient.CONFIG.enabled) level = null;
         if (lastLevel != level) {
             TRAILS.clear();
+            renderTrails = List.of();
             lastLevel = level;
+        }
+    }
+
+    public static synchronized void track(ExperienceOrb orb) {
+        TrailConfig cfg = XpOrbTrailsClient.CONFIG;
+        if (!(orb.level() instanceof ClientLevel level)) return;
+        updateWorld(level);
+        if (!cfg.enabled) return;
+
+        Vec3 camera = Minecraft.getInstance().gameRenderer.mainCamera().position();
+        if (orb.position().distanceToSqr(camera) > cfg.renderRange * cfg.renderRange) {
+            TRAILS.remove(orb.getId());
+            return;
+        }
+
+        trimToCap(cfg.trailCap);
+        Trail trail = TRAILS.get(orb.getId());
+        if (trail == null) {
+            // Keep existing trails continuous instead of churning every orb at the limit.
+            if (TRAILS.size() >= cfg.trailCap) return;
+            trail = new Trail();
+            TRAILS.put(orb.getId(), trail);
         }
 
         Vec3 point = trailPoint(orb, 1.0F, cfg);
         if (point == null) return;
         long now = System.nanoTime();
-        Trail trail = TRAILS.computeIfAbsent(orb.getId(), ignored -> new Trail());
         trail.lastSeen = now;
         trail.disappearedAt = 0L;
         trail.append(point, now, cfg.pointSpacing);
         trail.flow(cfg.smoothFlow);
 
-        while (TRAILS.size() > cfg.trailCap) {
+    }
+
+    private static void trimToCap(int cap) {
+        while (TRAILS.size() > cap) {
             Iterator<Integer> iterator = TRAILS.keySet().iterator();
             iterator.next();
             iterator.remove();
@@ -104,6 +128,9 @@ public final class TrailRenderer {
     public static synchronized void extract(LevelExtractionContext context) {
         long now = System.nanoTime();
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
+        updateWorld(context.level());
+        if (!cfg.enabled) return;
+        trimToCap(cfg.trailCap);
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
         Vec3 camera = context.camera().position();
         double rangeSq = cfg.renderRange * cfg.renderRange;
@@ -115,9 +142,15 @@ public final class TrailRenderer {
         while (iterator.hasNext()) {
             Map.Entry<Integer, Trail> entry = iterator.next();
             Trail trail = entry.getValue();
-            trail.points.removeIf(point -> now - point.time > lifetime);
             ExperienceOrb liveOrb = context.level().getEntity(entry.getKey()) instanceof ExperienceOrb orb
                     && orb.isAlive() && !orb.isRemoved() ? orb : null;
+            Vec3 position = liveOrb != null ? liveOrb.position()
+                    : trail.points.isEmpty() ? null : trail.points.get(trail.points.size() - 1).position;
+            if (position != null && position.distanceToSqr(camera) > rangeSq) {
+                iterator.remove();
+                continue;
+            }
+            trail.points.removeIf(point -> now - point.time > lifetime);
             Vec3 livePoint = liveOrb == null ? null : trailPoint(liveOrb, partialTick, cfg);
             if (liveOrb != null) {
                 trail.disappearedAt = 0L;
@@ -148,6 +181,7 @@ public final class TrailRenderer {
     }
 
     public static void render(LevelRenderContext context) {
+        if (!XpOrbTrailsClient.CONFIG.enabled) return;
         List<RenderTrail> snapshot = renderTrails;
         if (snapshot.isEmpty()) return;
 
@@ -428,6 +462,7 @@ public final class TrailRenderer {
         BUFFER.close();
         TRAILS.clear();
         renderTrails = List.of();
+        lastLevel = null;
     }
 
     private static final class Trail {

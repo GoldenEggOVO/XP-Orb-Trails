@@ -4,6 +4,10 @@ XP Orb Trails is a client-only Fabric mod. Choose the branch matching the
 Minecraft version you are working on: `26.3` for current development or `26.2`
 for maintenance of that release. Keep version-specific changes on that branch.
 
+Apply shared bug fixes and optimizations to both maintained branches, `26.2`
+and `26.3`. Adapt Minecraft-specific APIs separately and run each branch's build
+and client regressions before calling the shared change complete.
+
 ## Source layout
 
 ```text
@@ -17,6 +21,7 @@ src/client/java/dev/goldeneggovo/xporbtrails/
 src/client/resources/     Client mixin configuration
 src/main/resources/       Mod metadata, icon, and language JSON files
 src/test/java/            Configuration regression tests
+src/gametest/             Optional Minecraft client regression tests
 gradle/wrapper/           Reproducible Gradle wrapper
 ```
 
@@ -35,6 +40,12 @@ On Windows, use `./gradlew.bat clean build`. The build runs JUnit tests and
 `verifyReleaseJar`, which checks that the settings UI, Mod Menu integration,
 mixins, and translations are packaged. Test reports are in
 `build/reports/tests/test/`; installable JARs are in `build/libs/`.
+
+Run the client regressions with `./gradlew -PclientTests runClientGameTest`
+(use `gradlew.bat` on Windows). This launches a test client and temporary world
+to check trail limits, range filtering, toggle and disconnect cleanup, small
+color-picker layouts, pickup resets, and both rendering modes. A graphical
+environment is required. The test mod is not included in the release JAR.
 
 Before releasing, start a compatible Fabric client and check settings from
 both Mod Menu and the key binding, English and Chinese translations, the

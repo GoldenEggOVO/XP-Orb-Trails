@@ -287,6 +287,7 @@ public final class TrailConfigScreen extends Screen {
             }
             case PICKUP -> {
                 c.pickupFlash = defaults.pickupFlash;
+                c.pickupFlashStyle = defaults.pickupFlashStyle;
                 c.pickupFlashStrength = defaults.pickupFlashStrength;
                 c.pickupFlashSeconds = defaults.pickupFlashSeconds;
                 c.pickupFlashSize = defaults.pickupFlashSize;
