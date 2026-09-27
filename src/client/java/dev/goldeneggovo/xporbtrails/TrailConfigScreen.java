@@ -147,16 +147,15 @@ public final class TrailConfigScreen extends Screen {
         }
         toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
         section("shape");
-        row("cross_section", button(crossSectionLabel(c.crossSectionSides), () -> {
-            List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
-            for (int sides = 2; sides <= 32; sides++) {
-                int value = sides;
-                choices.add(new TrailChoiceScreen.Choice(crossSectionLabel(value), () -> {
-                    c.crossSectionSides = value; changed();
-                }));
+        row("cross_section", new AbstractSliderButton(0, 0, 150, 20,
+                crossSectionLabel(c.crossSectionSides), (c.crossSectionSides - 2) / 30.0) {
+            private int sides() { return 2 + (int) Math.round(value * 30); }
+            @Override protected void updateMessage() { setMessage(crossSectionLabel(sides())); }
+            @Override protected void applyValue() { c.crossSectionSides = sides(); changed(); }
+            @Override protected MutableComponent createNarrationMessage() {
+                return text("cross_section").append(": ").append(getMessage());
             }
-            choose("cross_section", choices);
-        }));
+        });
         shapeButton = button(shapeName(), () -> {
             List<TrailChoiceScreen.Choice> choices = new ArrayList<>();
             for (Shape s : SHAPES) choices.add(new TrailChoiceScreen.Choice(text("shape." + s.key()), () -> {

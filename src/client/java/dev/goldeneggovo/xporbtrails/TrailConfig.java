@@ -9,8 +9,8 @@ public final class TrailConfig {
     public int trailCap = 96;
     public double renderRange = 36.0;
     public double lifetimeSeconds = 2.6;
-    public double width = 0.24;
-    public int crossSectionSides = 3;
+    public double width = 0.1;
+    public int crossSectionSides = 2;
     public double opacity = 0.78;
     public double effectStrength = 0.78;
     public double pointSpacing = 0.18;

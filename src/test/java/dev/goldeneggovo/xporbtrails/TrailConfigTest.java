@@ -23,7 +23,11 @@ class TrailConfigTest {
             TrailConfig loaded = gson.fromJson("{\"crossSectionSides\":" + value + "}", TrailConfig.class).sanitized();
             assertEquals(Math.max(2, Math.min(32, value)), gson.toJsonTree(loaded).getAsJsonObject().get("crossSectionSides").getAsInt());
         }
-        assertEquals(3, gson.toJsonTree(gson.fromJson("{}", TrailConfig.class)).getAsJsonObject().get("crossSectionSides").getAsInt());
+        assertEquals(2, gson.fromJson("{}", TrailConfig.class).crossSectionSides);
+        assertEquals(0.1, new TrailConfig().width);
+        TrailConfig existing = gson.fromJson("{\"width\":0.24,\"crossSectionSides\":8}", TrailConfig.class).sanitized();
+        assertEquals(0.24, existing.width);
+        assertEquals(8, existing.crossSectionSides);
     }
 
     @Test
