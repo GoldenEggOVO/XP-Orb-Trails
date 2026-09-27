@@ -43,6 +43,19 @@ public final class TrailClientTest implements FabricClientGameTest {
                 "Reset pickup page must restore the flash style"));
         context.waitTicks(3);
         context.takeScreenshot("menu-appearance-small");
+        click(context, TrailConfigScreen.crossSectionLabel(3).getString());
+        click(context, "screen.xporbtrails.cross_section.round");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.crossSectionSides == 32,
+                "Round selection must use 32 sides"));
+        click(context, "screen.xporbtrails.cross_section.round");
+        click(context, "screen.xporbtrails.cross_section.flat");
+        context.runOnClient(client -> {
+            check(XpOrbTrailsClient.CONFIG.crossSectionSides == 2, "Flat selection must use a billboard");
+            verifyCrossSectionGeometry();
+        });
+        context.clickScreenButton("screen.xporbtrails.reset");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.crossSectionSides == 3,
+                "Reset appearance must restore the legacy cross-section"));
         context.runOnClient(client -> {
             for (AbstractWidget widget : widgets(client.gui.screen())) {
                 String label = widget.getMessage().getString();
@@ -203,6 +216,13 @@ public final class TrailClientTest implements FabricClientGameTest {
                 context.waitTicks(3);
                 context.takeScreenshot(glow ? "trail-glow" : "trail-alpha");
             }
+            for (int sides : new int[]{2, 8, 32}) {
+                context.runOnClient(client -> { XpOrbTrailsClient.CONFIG.crossSectionSides = sides; trails().clear(); });
+                world.getServer().runCommand("execute at @p run summon minecraft:experience_orb ~ ~2 ~3 {Value:1,Motion:[0.1d,0.1d,0.0d]}");
+                context.waitFor(client -> !snapshot().isEmpty());
+                context.waitTicks(5);
+                context.takeScreenshot("cross-section-" + sides);
+            }
             context.runOnClient(client -> XpOrbTrailsClient.CONFIG.enabled = false);
             context.waitTicks(2);
             context.runOnClient(client -> {
@@ -223,6 +243,42 @@ public final class TrailClientTest implements FabricClientGameTest {
 
     private void check(boolean success, String message) {
         if (!success) failures.add(message);
+    }
+
+    private void verifyCrossSectionGeometry() {
+        var tangent = new net.minecraft.world.phys.Vec3(1, 0, 0);
+        for (var view : List.of(new net.minecraft.world.phys.Vec3(0, 0, 1),
+                new net.minecraft.world.phys.Vec3(0, 1, 0), tangent)) {
+            var right = TrailRenderer.billboardRight(tangent, view, null);
+            check(Math.abs(right.lengthSqr() - 1) < 1e-9 && Math.abs(right.dot(tangent)) < 1e-9,
+                    "Billboard must retain finite unit width even when viewed end-on");
+            check(Math.abs(right.dot(view)) < 1e-9, "Billboard width must face the current camera");
+        }
+        try {
+            Class<?> sampleType = Class.forName(TrailRenderer.class.getName() + "$Sample");
+            var constructor = sampleType.getDeclaredConstructors()[0]; constructor.setAccessible(true);
+            var samples = new ArrayList<>();
+            for (int i = 0; i < 3; i++) samples.add(constructor.newInstance(new net.minecraft.world.phys.Vec3(i, 0, 0), 0L));
+            var append = java.util.Arrays.stream(TrailRenderer.class.getDeclaredMethods())
+                    .filter(m -> m.getName().equals("appendTube")).findFirst().orElseThrow();
+            append.setAccessible(true);
+            for (int sides : new int[]{2, 3, 8, 32}) {
+                int[] vertices = {0};
+                var out = java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+                        new Class<?>[]{com.mojang.blaze3d.vertex.VertexConsumer.class}, (proxy, method, args) -> {
+                            if (method.getName().equals("addVertex") && args.length == 3) {
+                                vertices[0]++;
+                                for (Object coordinate : args) check(Float.isFinite(((Number) coordinate).floatValue()),
+                                        "Cross-section vertices must be finite");
+                            }
+                            return proxy;
+                        });
+                append.invoke(null, out, samples, new net.minecraft.world.phys.Vec3(0, 0, 3),
+                        0L, 100L, 0.24, 0.78, 0xFFFFFF, 0xFFFFFF, "solid", 0.2, 1.0, 1.0, 1.0, sides);
+                check(vertices[0] == 8 * (sides == 2 ? 1 : sides),
+                        "Mesh must emit the selected face count without doubling the billboard");
+            }
+        } catch (ReflectiveOperationException exception) { throw new AssertionError(exception); }
     }
 
     private static Map<?, ?> trails() { return (Map<?, ?>) field(null, "TRAILS"); }
