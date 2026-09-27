@@ -43,19 +43,21 @@ public final class TrailClientTest implements FabricClientGameTest {
                 "Reset pickup page must restore the flash style"));
         context.waitTicks(3);
         context.takeScreenshot("menu-appearance-small");
-        click(context, TrailConfigScreen.crossSectionLabel(3).getString());
-        click(context, "screen.xporbtrails.cross_section.round");
+        slideCrossSection(context, 1.0);
         context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.crossSectionSides == 32,
                 "Round selection must use 32 sides"));
-        click(context, "screen.xporbtrails.cross_section.round");
-        click(context, "screen.xporbtrails.cross_section.flat");
+        slideCrossSection(context, 0.37);
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.crossSectionSides == 13,
+                "Cross-section slider must round to integer sides"));
+        slideCrossSection(context, 0.0);
         context.runOnClient(client -> {
             check(XpOrbTrailsClient.CONFIG.crossSectionSides == 2, "Flat selection must use a billboard");
             verifyCrossSectionGeometry();
         });
         context.clickScreenButton("screen.xporbtrails.reset");
-        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.crossSectionSides == 3,
-                "Reset appearance must restore the legacy cross-section"));
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.crossSectionSides == 2,
+                "Reset appearance must restore the camera-facing cross-section"));
+        context.takeScreenshot("cross-section-slider");
         context.runOnClient(client -> {
             for (AbstractWidget widget : widgets(client.gui.screen())) {
                 String label = widget.getMessage().getString();
@@ -314,6 +316,30 @@ public final class TrailClientTest implements FabricClientGameTest {
             screen.mouseReleased(event);
             System.out.println("Menu click " + key + " at " + event.x() + "," + event.y()
                     + " -> " + client.gui.screen().getClass().getSimpleName());
+        });
+        context.waitTicks(2);
+    }
+
+    private static void slideCrossSection(ClientGameTestContext context, double fraction) {
+        context.runOnClient(client -> {
+            var slider = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton
+                    && w.getMessage().getString().equals(TrailConfigScreen.crossSectionLabel(
+                            XpOrbTrailsClient.CONFIG.crossSectionSides).getString())).findFirst().orElseThrow();
+            for (var child : client.gui.screen().children()) if (child instanceof TrailSettingsList list) {
+                for (var row : list.children()) if (row.children().contains(slider))
+                    list.setScrollAmount(list.scrollAmount() + row.getY() - list.getY() - 8);
+            }
+        });
+        context.waitTicks(2);
+        context.runOnClient(client -> {
+            var slider = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton
+                    && w.getMessage().getString().equals(TrailConfigScreen.crossSectionLabel(
+                            XpOrbTrailsClient.CONFIG.crossSectionSides).getString())).findFirst().orElseThrow();
+            var event = new net.minecraft.client.input.MouseButtonEvent(slider.getX() + 4 + (slider.getWidth() - 8) * fraction,
+                    slider.getY() + 10, new net.minecraft.client.input.MouseButtonInfo(
+                            com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
+            if (!client.gui.screen().mouseClicked(event, false)) throw new AssertionError("Slider did not accept click");
+            client.gui.screen().mouseReleased(event);
         });
         context.waitTicks(2);
     }
