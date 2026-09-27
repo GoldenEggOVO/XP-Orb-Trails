@@ -39,6 +39,19 @@ test {
 	useJUnitPlatform()
 }
 
+if (project.hasProperty('clientTests')) {
+	fabricApi.configureTests {
+		createSourceSet = true
+		modId = 'xporbtrails-client-tests'
+		enableGameTests = false
+		enableClientGameTests = true
+	}
+	dependencies {
+		gametestImplementation sourceSets.client.output
+		gametestImplementation 'com.terraformersmc:modmenu:20.0.1'
+	}
+}
+
 processResources {
 	def version = project.version
 	inputs.property "version", version

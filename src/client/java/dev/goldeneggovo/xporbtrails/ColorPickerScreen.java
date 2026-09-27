@@ -20,6 +20,9 @@ public final class ColorPickerScreen extends Screen {
     private boolean draggingPalette;
     private boolean draggingHue;
     private boolean syncingHex;
+    private int paletteHeight;
+    private int hueY;
+    private int hexY;
 
     public ColorPickerScreen(Screen parent, int color, IntConsumer consumer) {
         super(Component.translatable("screen.xporbtrails.color_picker"));
@@ -32,7 +35,10 @@ public final class ColorPickerScreen extends Screen {
     @Override
     protected void init() {
         int center = width / 2;
-        hexBox = new EditBox(font, center - 80, 205, 160, 20, Component.translatable("screen.xporbtrails.hex"));
+        paletteHeight = Math.max(16, Math.min(112, height - 160));
+        hueY = 48 + paletteHeight + 14;
+        hexY = hueY + 31;
+        hexBox = new EditBox(font, center - 80, hexY, 160, 20, Component.translatable("screen.xporbtrails.hex"));
         hexBox.setMaxLength(7);
         hexBox.setValue(hex(currentColor()));
         hexBox.setResponder(text -> {
@@ -47,13 +53,13 @@ public final class ColorPickerScreen extends Screen {
         });
         addRenderableWidget(hexBox);
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(center - 80, 235, 160, 20).build());
+                .bounds(center - 80, height - 28, 160, 20).build());
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
-        int px = width / 2 - 80, py = 48, pw = 160, ph = 112;
+        int px = width / 2 - 80, py = 48, pw = 160, ph = paletteHeight;
         graphics.centeredText(font, title, width / 2, 16, 0xFFFFFFFF);
         int hueColor = hsvToRgb(hue, 1.0F, 1.0F);
         for (int x = 0; x < pw; x++) {
@@ -67,7 +73,7 @@ public final class ColorPickerScreen extends Screen {
         graphics.outline(sx - 3, sy - 3, 7, 7, 0xFFFFFFFF);
         graphics.outline(sx - 2, sy - 2, 5, 5, 0xFF000000);
 
-        int hy = 174, hh = 12;
+        int hy = hueY, hh = 12;
         for (int x = 0; x < pw; x++) {
             int color = hsvToRgb(x / (float) (pw - 1), 1.0F, 1.0F);
             graphics.fill(px + x, hy, px + x + 1, hy + hh, 0xFF000000 | color);
@@ -77,17 +83,17 @@ public final class ColorPickerScreen extends Screen {
         graphics.outline(hx - 2, hy - 2, 5, hh + 4, 0xFFFFFFFF);
         graphics.fill(px + pw + 12, py, px + pw + 42, py + 30, 0xFF000000 | currentColor());
         graphics.outline(px + pw + 11, py - 1, 32, 32, 0xFFFFFFFF);
-        graphics.text(font, Component.translatable("screen.xporbtrails.hex"), px, 193, 0xFFA0A0A0);
+        graphics.text(font, Component.translatable("screen.xporbtrails.hex"), px, hexY - 12, 0xFFA0A0A0);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         if (super.mouseClicked(event, doubled)) return true;
         int px = width / 2 - 80;
-        if (inside(event.x(), event.y(), px, 48, 160, 112)) {
+        if (inside(event.x(), event.y(), px, 48, 160, paletteHeight)) {
             draggingPalette = true; updatePalette(event.x(), event.y()); return true;
         }
-        if (inside(event.x(), event.y(), px, 174, 160, 12)) {
+        if (inside(event.x(), event.y(), px, hueY, 160, 12)) {
             draggingHue = true; updateHue(event.x()); return true;
         }
         return false;
@@ -109,7 +115,7 @@ public final class ColorPickerScreen extends Screen {
     private void updatePalette(double mouseX, double mouseY) {
         int px = width / 2 - 80;
         saturation = clamp((float) ((mouseX - px) / 159.0));
-        brightness = 1.0F - clamp((float) ((mouseY - 48) / 111.0));
+        brightness = 1.0F - clamp((float) ((mouseY - 48) / (paletteHeight - 1.0)));
         changed();
     }
 
