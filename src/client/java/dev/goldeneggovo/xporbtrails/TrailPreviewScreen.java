@@ -32,8 +32,14 @@ public final class TrailPreviewScreen extends Screen {
         int canvasH = Math.max(120, height - 76);
         int x0 = width / 2 - canvasW / 2;
         int y0 = 30;
-        drawBackdrop(graphics, x0, y0, canvasW, canvasH);
-        drawPreview(graphics, x0, y0, canvasW, canvasH);
+        extractPreview(graphics, x0, y0, canvasW, canvasH, false);
+    }
+
+    public void extractPreview(GuiGraphicsExtractor graphics, int x, int y, int w, int h, boolean compact) {
+        graphics.enableScissor(x, y, x + w, y + h);
+        drawBackdrop(graphics, x, y, w, h);
+        drawPreview(graphics, x, y, w, h, compact);
+        graphics.disableScissor();
     }
 
     private void drawBackdrop(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
@@ -58,7 +64,7 @@ public final class TrailPreviewScreen extends Screen {
         }
     }
 
-    private void drawPreview(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
+    private void drawPreview(GuiGraphicsExtractor graphics, int x, int y, int w, int h, boolean compact) {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
         double seconds = System.nanoTime() / 1_000_000_000.0;
         double elapsed = (System.nanoTime() - demoStartNanos) / 1_000_000_000.0;
@@ -79,7 +85,7 @@ public final class TrailPreviewScreen extends Screen {
         int samples = Math.max(36, Math.min(90, w / 6));
         double visibleLength = Math.min(1.0, 0.28 + c.lifetimeSeconds / 7.5);
         double tailStart = Math.max(0.0, travel - visibleLength);
-        for (int i = 0; i < samples; i++) {
+        for (int i = 0; c.enabled && i < samples; i++) {
             double q = i / (double) (samples - 1);
             double p = tailStart + (travel - tailStart) * q;
             int px = left + (int) Math.round((right - left) * p);
@@ -87,20 +93,22 @@ public final class TrailPreviewScreen extends Screen {
             double shape = widthScale(c, q);
             int radius = Math.max(1, Math.min(11, (int) Math.round(c.width * 22.0 * shape)));
             int rgb = colorAt(c, q, seconds);
-            int alpha = clamp255((int) (255 * c.opacity * Math.min(1.0, c.glowStrength) * (0.14 + q * 0.86)));
-            glowSquare(graphics, px, py, radius, rgb, alpha);
+            double fade = cycle < 4.0 ? 1.0 : 1.0 - smooth((cycle - 4.0) / c.pickupFadeSeconds);
+            int alpha = clamp255((int) (255 * c.effectStrength * fade * (0.14 + q * 0.86)));
+            if (c.additiveGlow) glowSquare(graphics, px, py, radius, rgb, alpha);
+            else graphics.fill(px - radius, py - radius, px + radius + 1, py + radius + 1, (alpha << 24) | rgb);
         }
 
         int headX = left + (int) Math.round((right - left) * travel);
         int headY = pathY(centerY, h, travel, seconds);
         drawOrb(graphics, headX, headY, c.endColor);
 
-        if (c.pickupFlash && cycle >= 4.0 && cycle < 4.0 + c.pickupFlashSeconds * 2.4) {
+        if (c.enabled && c.pickupFlash && cycle >= 4.0 && cycle < 4.0 + c.pickupFlashSeconds * 2.4) {
             double p = Math.min(1.0, (cycle - 4.0) / Math.max(0.12, c.pickupFlashSeconds * 2.4));
             drawFlash(graphics, headX, headY, p, c, seconds);
         }
 
-        graphics.centeredText(font, Component.translatable("screen.xporbtrails.preview_hint"), x + w / 2, y + h - 15, 0xAAADC8B6);
+        if (!compact) graphics.centeredText(font, Component.translatable("screen.xporbtrails.preview_hint"), x + w / 2, y + h - 15, 0xAAADC8B6);
     }
 
     private void glowSquare(GuiGraphicsExtractor graphics, int x, int y, int radius, int rgb, int alpha) {
@@ -122,8 +130,9 @@ public final class TrailPreviewScreen extends Screen {
     private void drawFlash(GuiGraphicsExtractor graphics, int x, int y, double progress, TrailConfig c, double seconds) {
         double eased = smooth(progress);
         int radius = Math.max(3, (int) Math.round((8 + 40 * eased) * c.pickupFlashSize));
-        int alpha = clamp255((int) (210 * c.pickupFlashStrength * (1.0 - smooth(progress))));
-        int rgb = "rainbow".equals(c.colorMode) ? hsv((float) (seconds * c.rainbowSpeed + 0.72), 0.75F, 1.0F) : c.endColor;
+        int alpha = clamp255((int) (210 * c.effectStrength * c.pickupFlashStrength * (1.0 - smooth(progress))));
+        int rgb = "rainbow".equals(c.colorMode) ? hsv((float) (seconds * c.rainbowSpeed + 0.72), 0.75F, 1.0F)
+                : "solid".equals(c.colorMode) ? c.startColor : c.endColor;
         int color = (alpha << 24) | rgb;
         if ("star".equals(c.pickupFlashStyle)) {
             graphics.fill(x - radius, y - 1, x + radius + 1, y + 2, color);

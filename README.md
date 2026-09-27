@@ -18,7 +18,7 @@ and server-side installation are not required.
 - Interpolated trails with adjustable lifetime, render range, and performance limits.
 - Solid, gradient, and animated rainbow colors, with an in-game color picker.
 - Separate head, middle, and tail widths, plus shape presets.
-- Adjustable opacity, glow, motion shift, camera push, and fading.
+- One effect-strength control, enhanced glow, and optional motion and position adjustments.
 - Optional soft, star, and ring pickup flashes.
 - Built-in presets, named custom profiles, and an animated preview screen.
 - English and Simplified Chinese interfaces.
@@ -48,8 +48,15 @@ translation is unavailable; English and Simplified Chinese are included.
 Open the settings screen through Mod Menu's Config button or bind
 **Open Trail Settings** in Minecraft's Controls screen. Changes apply
 immediately and are saved to `config/xp-orb-trails.json` when the screen closes.
-Each settings page has its own reset button, and hovering over an option shows
-a short description.
+Settings are grouped into **Common**, **Appearance**, **Advanced**, and **My Profiles**.
+Lists support scrolling and keyboard navigation; detailed shape, flash, and position
+controls expand only when needed. Wide windows show a live preview beside the settings.
+Each editable settings page has its own reset button, and hovering over a control
+shows a short description.
+
+**Effect Strength** replaces the separate opacity and glow-strength sliders.
+Flash size is independent of trail width. Existing configuration files and saved
+profiles migrate automatically while preserving their previous strength and flash size.
 
 If the configuration file is unreadable, the mod attempts to preserve it as
 `xp-orb-trails.json.broken` (or a numbered variant), restores defaults, and

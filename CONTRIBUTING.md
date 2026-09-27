@@ -46,6 +46,9 @@ Run the client regressions with `./gradlew -PclientTests runClientGameTest`
 to check trail limits, range filtering, toggle and disconnect cleanup, small
 color-picker layouts, pickup resets, and both rendering modes. A graphical
 environment is required. The test mod is not included in the release JAR.
+Menu checks cover preset selection, conditional controls, profile management,
+keyboard scrolling, and narrow/wide layouts. Unit tests also verify legacy
+configuration and profile migration.
 
 Before releasing, start a compatible Fabric client and check settings from
 both Mod Menu and the key binding, English and Chinese translations, the

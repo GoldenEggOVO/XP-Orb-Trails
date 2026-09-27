@@ -1,12 +1,62 @@
 package dev.goldeneggovo.xporbtrails;
 
 import org.junit.jupiter.api.Test;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TrailConfigTest {
+    @Test
+    void migratesLegacyStrengthAndFlashSizeWithoutChangingTheEffect() {
+        Gson gson = new Gson();
+        TrailConfig config = gson.fromJson("""
+                {"configVersion":8,"width":0.48,"opacity":0.6,"glowStrength":1.5,
+                 "pickupFlashSize":0.8,"savedProfiles":[
+                   {"name":"Legacy","width":0.12,"opacity":0.8,"glowStrength":1.25,"pickupFlashSize":0.6}
+                 ]}
+                """, TrailConfig.class).sanitized();
+        assertEquals(9, config.configVersion);
+        assertEquals(0.9, gson.toJsonTree(config).getAsJsonObject().get("effectStrength").getAsDouble(), 1e-9);
+        assertEquals(1.6, config.pickupFlashSize, 1e-9);
+        config.savedProfiles.getFirst().applyTo(config);
+        assertEquals(1.0, gson.toJsonTree(config).getAsJsonObject().get("effectStrength").getAsDouble(), 1e-9);
+        assertEquals(0.3, config.pickupFlashSize, 1e-9);
+    }
+
+    @Test
+    void migrationIsStableAcrossSavingAndChangingTrailWidth() {
+        Gson gson = new Gson();
+        TrailConfig config = gson.fromJson("""
+                {"configVersion":8,"width":0.48,"opacity":0.6,"glowStrength":1.5,"pickupFlashSize":0.8}
+                """, TrailConfig.class).sanitized();
+        config.width = 0.1;
+        config = gson.fromJson(gson.toJson(config), TrailConfig.class).sanitized();
+        assertEquals(9, config.configVersion);
+        assertEquals(1.6, config.pickupFlashSize, 1e-9);
+        assertEquals(0.9, gson.toJsonTree(config).getAsJsonObject().get("effectStrength").getAsDouble(), 1e-9);
+    }
+
+    @Test
+    void newProfilesAndCopiesPreserveIndependentControlsAfterReload() {
+        TrailConfig config = new TrailConfig();
+        config.effectStrength = 1.35;
+        config.pickupFlashSize = 1.7;
+        config.savedProfiles.add(new TrailConfig.SavedProfile("New", config));
+        Gson gson = new Gson();
+        config = gson.fromJson(gson.toJson(config), TrailConfig.class).sanitized();
+        TrailConfig copy = new TrailConfig();
+        copy.copyFrom(config);
+        copy.width = 0.8;
+        copy.effectStrength = 0.5;
+        copy.savedProfiles.getFirst().applyTo(copy);
+        assertEquals(1.35, copy.effectStrength);
+        assertEquals(1.7, copy.pickupFlashSize);
+        copy.width = 0.1;
+        assertEquals(1.7, copy.sanitized().pickupFlashSize);
+    }
+
     @Test
     void sanitizesInvalidSettingsAndSavedProfiles() {
         TrailConfig config = new TrailConfig();
@@ -42,7 +92,7 @@ class TrailConfigTest {
 
         config.sanitized();
 
-        assertEquals(8, config.configVersion);
+        assertEquals(9, config.configVersion);
         assertEquals(0.10, config.motionShift);
         assertEquals(0.35, config.pickupFadeSeconds);
         assertEquals("soft", config.pickupFlashStyle);
