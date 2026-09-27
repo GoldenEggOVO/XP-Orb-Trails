@@ -35,6 +35,8 @@ public final class TrailConfigScreen extends Screen {
     private TrailSettingsList list;
     private double scroll;
     private boolean customShape, pickupDetails, positionDetails;
+    private boolean savedColorsExpanded;
+    private int deleteColorIndex = -1;
     private int selectedProfile = -1;
     private int deleteArmedIndex = -1;
     private Component appliedProfile;
@@ -62,7 +64,7 @@ public final class TrailConfigScreen extends Screen {
         int tabWidth = (panelWidth - 12) / 4;
         for (Page tab : Page.values()) {
             Button button = Button.builder(text(tab.name().toLowerCase(Locale.ROOT)), b -> {
-                page = tab; scroll = 0; rebuildWidgets();
+                page = tab; scroll = 0; deleteColorIndex = -1; rebuildWidgets();
             }).bounds(panelX + tab.ordinal() * (tabWidth + 4), 28, tabWidth, 20).build();
             button.active = tab != page;
             addRenderableWidget(button);
@@ -127,7 +129,21 @@ public final class TrailConfigScreen extends Screen {
                 refresh();
             });
             save.active = c.savedPresets.size() < 12;
-            row("saved_colors", save);
+            list.row(Component.empty(), save);
+        }
+        fold("saved_colors", savedColorsExpanded, () -> {
+            savedColorsExpanded = !savedColorsExpanded; deleteColorIndex = -1; refresh();
+        });
+        if (savedColorsExpanded) {
+            for (int i = 0; i < c.savedPresets.size(); i++) {
+                int index = i;
+                TrailConfig.SavedPreset preset = c.savedPresets.get(i);
+                list.row(colorLabel(Component.literal(preset.name), preset.startColor, preset.endColor),
+                        button(text(deleteColorIndex == index ? "confirm_delete_color" : "delete_color"), () -> {
+                            if (deleteColorIndex != index) { deleteColorIndex = index; refresh(); return; }
+                            c.savedPresets.remove(index); deleteColorIndex = -1; refresh();
+                        }));
+            }
         }
         toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
         section("shape");
@@ -290,7 +306,8 @@ public final class TrailConfigScreen extends Screen {
         }));
     }
     private void color(String key, int value, IntConsumer setter) {
-        row(key, button(colorLabel(Component.literal(String.format(Locale.ROOT, "#%06X", value & 0xFFFFFF)), value, value), () -> {
+        row(key, button(Component.literal("■ ").withStyle(s -> s.withColor(value))
+                .append(Component.literal(String.format(Locale.ROOT, "#%06X", value & 0xFFFFFF)).withStyle(s -> s.withColor(0xFFFFFF))), () -> {
             rememberScroll();
             minecraft.gui.setScreen(new ColorPickerScreen(this, value, v -> { setter.accept(v); changed(); }));
         }));
