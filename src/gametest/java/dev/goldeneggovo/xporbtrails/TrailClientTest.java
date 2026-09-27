@@ -43,6 +43,34 @@ public final class TrailClientTest implements FabricClientGameTest {
                 "Reset pickup page must restore the flash style"));
         context.waitTicks(3);
         context.takeScreenshot("menu-appearance-small");
+        context.runOnClient(client -> {
+            for (AbstractWidget widget : widgets(client.gui.screen())) {
+                String label = widget.getMessage().getString();
+                if (label.contains("#")) check(label.chars().filter(c -> c == '■').count() == 1,
+                        "Individual color controls must show exactly one swatch");
+            }
+            for (int i = 0; i < 12; i++) XpOrbTrailsClient.CONFIG.savedPresets.add(
+                    new TrailConfig.SavedPreset("Color " + i, i, i + 1));
+        });
+        context.clickScreenButton("screen.xporbtrails.common");
+        context.clickScreenButton("screen.xporbtrails.appearance");
+        context.runOnClient(client -> check(widgets(client.gui.screen()).stream().anyMatch(w ->
+                w.getMessage().getString().equals(net.minecraft.network.chat.Component.translatable(
+                        "screen.xporbtrails.save_preset").getString()) && !w.active), "Saving must stop at twelve colors"));
+        click(context, "screen.xporbtrails.expand");
+        click(context, "screen.xporbtrails.delete_color");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 12,
+                "Deleting a color must require confirmation"));
+        click(context, "screen.xporbtrails.confirm_delete_color");
+        context.runOnClient(client -> {
+            check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 11, "Confirmed deletion must free a color slot");
+            check("Color 1".equals(XpOrbTrailsClient.CONFIG.savedPresets.getFirst().name),
+                    "Deletion must preserve the other saved colors");
+        });
+        click(context, "screen.xporbtrails.save_preset");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 12,
+                "A freed color slot must be reusable"));
+        context.takeScreenshot("saved-colors-management");
         click(context, "screen.xporbtrails.mode.gradient");
         context.waitForScreen(TrailChoiceScreen.class);
         click(context, "screen.xporbtrails.mode.rainbow");
