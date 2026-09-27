@@ -18,6 +18,8 @@ and server-side installation are not required.
 - Interpolated trails with adjustable lifetime, render range, and performance limits.
 - Solid, gradient, and animated rainbow colors, with an in-game color picker.
 - Separate head, middle, and tail widths, plus shape presets.
+- Cross-section slider from a camera-facing ribbon (2 sides) to a round approximation (32 sides).
+  New configurations default to 2 sides and a width of 0.1; existing settings are preserved.
 - One effect-strength control, enhanced glow, and optional motion and position adjustments.
 - Optional soft, star, and ring pickup flashes.
 - Built-in presets, named custom profiles, and an animated preview screen.

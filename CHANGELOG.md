@@ -2,6 +2,12 @@
 
 ## 1.1.1 — Minecraft 26.3
 
+- Add a cross-section slider from a camera-facing ribbon (2 sides) to a round approximation (32 sides).
+- Default new configurations to a 2-sided ribbon with a trail width of 0.1; preserve existing settings.
+- Save cross-section choices in custom profiles and restore them when applying a profile.
+- Restore saved color deletion with confirmation, including when all 12 slots are full.
+- Show a single swatch on individual color buttons.
+
 - Reorganize settings into scrollable Common, Appearance, Advanced, and My Profiles pages.
 - Replace cycling presets with selection lists and collapse advanced detail controls.
 - Merge opacity and glow strength into Effect Strength, preserving existing configurations and profiles.
