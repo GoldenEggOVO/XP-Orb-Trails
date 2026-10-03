@@ -125,8 +125,8 @@ public final class TrailConfigScreen extends Screen {
             Button save = button(text("save_preset"), () -> {
                 if (c.savedPresets.size() >= 12) return;
                 c.savedPresets.add(new TrailConfig.SavedPreset(
-                        Component.translatable("screen.xporbtrails.saved_preset_name", c.savedPresets.size() + 1).getString(), c.startColor, c.endColor));
-                refresh();
+                        nextSavedName("saved_preset_name", c.savedPresets.stream().map(p -> p.name).toList()), c.startColor, c.endColor));
+                saveAndRefresh();
             });
             save.active = c.savedPresets.size() < 12;
             list.row(Component.empty(), save);
@@ -141,7 +141,7 @@ public final class TrailConfigScreen extends Screen {
                 list.row(colorLabel(Component.literal(preset.name), preset.startColor, preset.endColor),
                         button(text(deleteColorIndex == index ? "confirm_delete_color" : "delete_color"), () -> {
                             if (deleteColorIndex != index) { deleteColorIndex = index; refresh(); return; }
-                            c.savedPresets.remove(index); deleteColorIndex = -1; refresh();
+                            c.savedPresets.remove(index); deleteColorIndex = -1; saveAndRefresh();
                         }));
             }
         }
@@ -172,7 +172,7 @@ public final class TrailConfigScreen extends Screen {
         }
         section("pickup");
         if (!c.pickupFlash) {
-            row("pickup_flash", button(text("enable"), () -> { c.pickupFlash = true; changed(); refresh(); }));
+            row("pickup_flash", button(text("enable"), () -> { c.pickupFlash = true; changed(); saveAndRefresh(); }));
         } else {
             select("flash_style", "flash_style.", c.pickupFlashStyle, List.of("soft", "star", "ring"), v -> c.pickupFlashStyle = v);
             fold("pickup_details", pickupDetails, () -> { pickupDetails = !pickupDetails; refresh(); });
@@ -203,7 +203,7 @@ public final class TrailConfigScreen extends Screen {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
         section("built_in_profiles");
         List<Profile> profiles = allProfiles();
-        for (Profile p : profiles.subList(0, 4)) list.row(p.name(), button(text("apply_profile"), () -> { apply(p); refresh(); }));
+        for (Profile p : profiles.subList(0, 4)) list.row(p.name(), button(text("apply_profile"), () -> { apply(p); saveAndRefresh(); }));
         section("saved_profiles");
         for (Profile p : profiles.subList(4, profiles.size())) list.row(p.name(), button(text("manage_profile"), () -> {
             selectedProfile = p.savedIndex(); deleteArmedIndex = -1; refresh();
@@ -212,8 +212,8 @@ public final class TrailConfigScreen extends Screen {
         Button save = button(text("save_profile"), () -> {
             if (c.savedProfiles.size() >= 8) return;
             c.savedProfiles.add(new TrailConfig.SavedProfile(
-                    Component.translatable("screen.xporbtrails.saved_profile_name", c.savedProfiles.size() + 1).getString(), c));
-            selectedProfile = c.savedProfiles.size() - 1; deleteArmedIndex = -1; refresh();
+                    nextSavedName("saved_profile_name", c.savedProfiles.stream().map(p -> p.name).toList()), c));
+            selectedProfile = c.savedProfiles.size() - 1; deleteArmedIndex = -1; saveAndRefresh();
             list.setScrollAmount(list.maxScrollAmount());
         });
         save.active = c.savedProfiles.size() < 8;
@@ -222,7 +222,7 @@ public final class TrailConfigScreen extends Screen {
         TrailConfig.SavedProfile selected = c.savedProfiles.get(selectedProfile);
         section("edit_selected_profile");
         list.row(Component.empty(), button(text("apply_profile"), () -> {
-            apply(new Profile(Component.literal(selected.name), selected, selectedProfile)); refresh();
+            apply(new Profile(Component.literal(selected.name), selected, selectedProfile)); saveAndRefresh();
         }));
         EditBox name = new EditBox(font, 0, 0, 150, 20, text("profile_name"));
         name.setMaxLength(32); name.setValue(selected.name);
@@ -232,16 +232,16 @@ public final class TrailConfigScreen extends Screen {
             if (value.isEmpty()) return;
             if (appliedProfile != null && appliedProfile.getString().equals(selected.name)) appliedProfile = Component.literal(value);
             selected.name = value;
-            refresh();
+            saveAndRefresh();
         });
         name.setResponder(value -> rename.active = !value.isBlank());
         list.row(Component.empty(), rename);
         list.row(Component.empty(), button(text("overwrite_profile"), () -> {
-            c.savedProfiles.set(selectedProfile, new TrailConfig.SavedProfile(selected.name, c)); refresh();
+            c.savedProfiles.set(selectedProfile, new TrailConfig.SavedProfile(selected.name, c)); saveAndRefresh();
         }));
         list.row(Component.empty(), button(text(deleteArmedIndex == selectedProfile ? "confirm_delete_profile" : "delete_profile"), () -> {
             if (deleteArmedIndex != selectedProfile) { deleteArmedIndex = selectedProfile; refresh(); return; }
-            c.savedProfiles.remove(selectedProfile); selectedProfile = -1; deleteArmedIndex = -1; appliedProfile = null; refresh();
+            c.savedProfiles.remove(selectedProfile); selectedProfile = -1; deleteArmedIndex = -1; appliedProfile = null; saveAndRefresh();
         }));
     }
 
@@ -292,7 +292,7 @@ public final class TrailConfigScreen extends Screen {
             }
             case PROFILES -> { return; }
         }
-        changed(); refresh();
+        changed(); saveAndRefresh();
     }
 
     private void row(String key, AbstractWidget widget) {
@@ -345,7 +345,15 @@ public final class TrailConfigScreen extends Screen {
         if (shapeButton != null) shapeButton.setMessage(shapeName());
     }
     private void rememberScroll() { if (list != null) scroll = list.scrollAmount(); }
-    private void refresh() { rememberScroll(); XpOrbTrailsClient.saveConfig(); rebuildWidgets(); }
+    private static String nextSavedName(String key, List<String> names) {
+        int number = 1;
+        String name;
+        do { name = Component.translatable("screen.xporbtrails." + key, number++).getString(); }
+        while (names.contains(name));
+        return name;
+    }
+    private void refresh() { rememberScroll(); rebuildWidgets(); }
+    private void saveAndRefresh() { XpOrbTrailsClient.saveConfig(); refresh(); }
     @Override public void resize(int width, int height) { rememberScroll(); super.resize(width, height); }
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
