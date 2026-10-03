@@ -97,6 +97,7 @@ tasks.register('verifyReleaseJar') {
 			'dev/goldeneggovo/xporbtrails/TrailConfigScreen.class',
 			'dev/goldeneggovo/xporbtrails/ModMenuIntegration.class',
 			'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
+			'dev/goldeneggovo/xporbtrails/mixin/ClientPacketListenerMixin.class',
 			'assets/xporbtrails/lang/en_us.json',
 			'assets/xporbtrails/lang/zh_cn.json'
 		]

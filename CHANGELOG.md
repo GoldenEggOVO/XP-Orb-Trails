@@ -2,6 +2,10 @@
 
 ## Unreleased — Minecraft 26.2
 
+- Trigger pickup flashes from vanilla pickup packets, including stationary and partially collected orbs.
+- Avoid false pickup flashes when nearby orbs disappear for other reasons.
+- Sort ordinary alpha-blended trail and flash quads back-to-front using vanilla vertex sorting.
+
 - Stream trail meshes through reusable ring buffers and cache circular cross-section directions.
 - Avoid copying control-point lists and pre-size curve sample buffers.
 - Choose unused automatic names for saved colors and profiles after deletion.
