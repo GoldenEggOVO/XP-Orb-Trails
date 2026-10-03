@@ -201,6 +201,60 @@ public final class TrailClientTest implements FabricClientGameTest {
             world.getConnection().waitForChunksRender();
             context.runOnClient(client -> {
                 trails().clear();
+                XpOrbTrailsClient.CONFIG = new TrailConfig();
+                var orb = new ExperienceOrb(client.level, client.player.getX() + 0.5,
+                        client.player.getY(), client.player.getZ(), 1);
+                orb.setId(100200); client.level.addEntity(orb);
+                for (int i = 0; i < 3; i++) { orb.setPos(orb.getX() + 0.2, orb.getY(), orb.getZ()); TrailRenderer.track(orb); }
+                client.level.removeEntity(orb.getId(), net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+            });
+            context.waitTicks(1);
+            context.runOnClient(client -> check(snapshot().stream().noneMatch(t -> (double) field(t, "flashProgress") >= 0),
+                    "An orb removed near the player without a pickup packet must not flash"));
+            context.runOnClient(client -> {
+                trails().clear();
+                var orb = new ExperienceOrb(client.level, client.player.getX() + 1,
+                        client.player.getY() + 1, client.player.getZ(), 1);
+                orb.setId(100201); client.level.addEntity(orb);
+                for (int i = 0; i < 3; i++) { orb.setPos(orb.getX() + 0.2, orb.getY(), orb.getZ()); TrailRenderer.track(orb); }
+                client.getConnection().handleTakeItemEntity(new net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket(
+                        orb.getId(), client.player.getId(), 1));
+            });
+            context.waitTicks(1);
+            context.runOnClient(client -> {
+                check(snapshot().stream().anyMatch(t -> (double) field(t, "flashProgress") >= 0),
+                        "A real pickup packet must flash even while the orb remains loaded");
+                client.level.removeEntity(100201, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+                trails().clear();
+            });
+            context.runOnClient(client -> {
+                var orb = new ExperienceOrb(client.level, client.player.getX() + 10,
+                        client.player.getY() + 1, client.player.getZ(), 1);
+                orb.setId(100202); orb.setNoGravity(true); orb.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                client.level.addEntity(orb); TrailRenderer.track(orb);
+                client.getConnection().handleTakeItemEntity(new net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket(
+                        orb.getId(), client.player.getId(), 1));
+            });
+            context.waitTicks(1);
+            context.runOnClient(client -> {
+                check(snapshot().stream().anyMatch(t -> (double) field(t, "flashProgress") >= 0),
+                        "A stationary orb must flash without needing a multi-point trail");
+                client.level.removeEntity(100202, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+                trails().clear();
+            });
+            var pickedTrail = new java.util.concurrent.atomic.AtomicReference<Object>();
+            world.getServer().runCommand("execute at @p run summon minecraft:experience_orb ~10 ~1 ~ {Value:1,Count:3,NoGravity:1b,Motion:[0.0d,0.0d,0.0d],Tags:[\"xporb_pickup_test\"]}");
+            context.waitFor(client -> !trails().isEmpty());
+            context.runOnClient(client -> pickedTrail.set(trails().values().iterator().next()));
+            world.getServer().runCommand("execute at @p run tp @e[type=minecraft:experience_orb,tag=xporb_pickup_test] ~ ~ ~");
+            context.waitFor(client -> (long) field(pickedTrail.get(), "pickupAt") != 0);
+            context.runOnClient(client -> check(field(pickedTrail.get(), "pickupPosition") != null,
+                    "Vanilla server pickup packets must record a flash position"));
+            context.takeScreenshot("pickup-flash-real");
+            world.getServer().runCommand("kill @e[type=minecraft:experience_orb,tag=xporb_pickup_test]");
+            context.runOnClient(client -> trails().clear());
+            context.runOnClient(client -> {
+                trails().clear();
                 XpOrbTrailsClient.CONFIG.trailCap = 8;
                 var camera = client.gameRenderer.mainCamera().position();
                 var orbs = new ArrayList<ExperienceOrb>();
@@ -311,8 +365,10 @@ public final class TrailClientTest implements FabricClientGameTest {
                     case 2 -> 6052789791297900145L;
                     case 3 -> 61044112680327065L;
                     case 8 -> 4513098808163761609L;
-                    default -> -2688908051212465271L;
+                    case 32 -> -2688908051212465271L;
+                    default -> throw new AssertionError("No original mesh fingerprint recorded for " + sides + " sides");
                 };
+                // Recorded from the original renderer: hash the ordered float coordinates and ARGB colors.
                 check(fingerprint[0] == expected, "Optimized vertices and colors must match the original mesh for " + sides + " sides");
             }
         } catch (ReflectiveOperationException exception) { throw new AssertionError(exception); }

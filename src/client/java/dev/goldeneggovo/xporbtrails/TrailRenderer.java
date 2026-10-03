@@ -13,6 +13,7 @@ import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -109,6 +110,15 @@ public final class TrailRenderer {
         }
     }
 
+    public static synchronized void confirmPickup(ExperienceOrb orb) {
+        TrailConfig cfg = XpOrbTrailsClient.CONFIG;
+        if (!cfg.enabled || !cfg.pickupFlash || orb.level() != lastLevel) return;
+        Trail trail = TRAILS.get(orb.getId());
+        if (trail == null) return;
+        trail.pickupAt = System.nanoTime();
+        trail.pickupPosition = trailPoint(orb, 1.0F, cfg);
+    }
+
     private static Vec3 trailPoint(ExperienceOrb orb, float partialTick, TrailConfig cfg) {
         Minecraft client = Minecraft.getInstance();
         Vec3 source = orb.getPosition(partialTick).add(0, cfg.orbYOffset, 0);
@@ -148,7 +158,7 @@ public final class TrailRenderer {
             ExperienceOrb liveOrb = context.level().getEntity(entry.getKey()) instanceof ExperienceOrb orb
                     && orb.isAlive() && !orb.isRemoved() ? orb : null;
             Vec3 position = liveOrb != null ? liveOrb.position()
-                    : trail.points.isEmpty() ? null : trail.points.get(trail.points.size() - 1).position;
+                    : trail.points.isEmpty() ? trail.pickupPosition : trail.points.get(trail.points.size() - 1).position;
             if (position != null && position.distanceToSqr(camera) > rangeSq) {
                 iterator.remove();
                 continue;
@@ -157,27 +167,24 @@ public final class TrailRenderer {
             Vec3 livePoint = liveOrb == null ? null : trailPoint(liveOrb, partialTick, cfg);
             if (liveOrb != null) {
                 trail.disappearedAt = 0L;
-                trail.pickupConfirmed = false;
             } else if (trail.disappearedAt == 0L) {
                 trail.disappearedAt = now;
-                Vec3 lastPoint = trail.points.isEmpty() ? null : trail.points.get(trail.points.size() - 1).position;
-                trail.pickupConfirmed = lastPoint != null && Minecraft.getInstance().player != null
-                        && Minecraft.getInstance().player.getPosition(1.0F).distanceToSqr(lastPoint) <= 9.0;
             }
             long fadeNow = trail.disappearedAt == 0L ? now : trail.disappearedAt;
             double disappearanceFade = trail.disappearedAt == 0L ? 1.0
                     : 1.0 - smoothStep((now - trail.disappearedAt)
                     / (cfg.pickupFadeSeconds * 1_000_000_000.0));
-            double flashProgress = trail.disappearedAt == 0L || !trail.pickupConfirmed ? -1.0
-                    : (now - trail.disappearedAt) / (cfg.pickupFlashSeconds * 1_000_000_000.0);
+            double flashProgress = trail.pickupAt == 0L ? -1.0
+                    : (now - trail.pickupAt) / (cfg.pickupFlashSeconds * 1_000_000_000.0);
             boolean flashVisible = cfg.pickupFlash && flashProgress >= 0.0 && flashProgress < 1.0;
-            if ((trail.points.isEmpty() && now - trail.lastSeen > lifetime)
-                    || (disappearanceFade <= 0.001 && !flashVisible)) {
+            if (!flashVisible && ((trail.points.isEmpty() && now - trail.lastSeen > lifetime)
+                    || disappearanceFade <= 0.001)) {
                 iterator.remove();
                 continue;
             }
-            if (trail.points.size() >= 2 && trail.points.get(trail.points.size() - 1).position.distanceToSqr(camera) <= rangeSq) {
-                snapshot.add(new RenderTrail(sampleCurve(trail.points, livePoint), fadeNow, disappearanceFade, flashProgress));
+            if (trail.points.size() >= 2 || flashVisible) {
+                List<Sample> samples = trail.points.isEmpty() ? List.of() : sampleCurve(trail.points, livePoint);
+                snapshot.add(new RenderTrail(samples, fadeNow, disappearanceFade, flashProgress, trail.pickupPosition));
             }
         }
         renderTrails = List.copyOf(snapshot);
@@ -188,14 +195,15 @@ public final class TrailRenderer {
         List<RenderTrail> snapshot = renderTrails;
         if (snapshot.isEmpty()) return;
 
-        RenderPipeline pipeline = XpOrbTrailsClient.CONFIG.additiveGlow ? ADDITIVE_PIPELINE : ALPHA_PIPELINE;
+        TrailConfig cfg = XpOrbTrailsClient.CONFIG;
+        RenderPipeline pipeline = cfg.additiveGlow ? ADDITIVE_PIPELINE : ALPHA_PIPELINE;
         VertexFormat format = pipeline.getVertexFormatBinding(0);
         if (format == null) return;
         PrimitiveTopology topology = pipeline.getPrimitiveTopology();
-        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, topology);
+        // Vertices are camera-relative, so vanilla's origin-distance sort orders all transparent quads.
+        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, topology, cfg.additiveGlow ? null : VertexSorting.DISTANCE_TO_ORIGIN);
         VertexConsumer vertices = BUFFER.getVertexBuilder(draw);
         Vec3 camera = context.levelState().cameraRenderState.pos;
-        TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
 
         for (RenderTrail trail : snapshot) {
@@ -203,8 +211,8 @@ public final class TrailRenderer {
                     cfg.width, cfg.effectStrength * trail.opacity,
                     cfg.startColor, cfg.endColor, cfg.colorMode, cfg.rainbowSpeed,
                     cfg.tailWidthScale, cfg.middleWidthScale, cfg.headWidthScale, cfg.crossSectionSides);
-            if (cfg.pickupFlash && trail.flashProgress >= 0.0 && trail.flashProgress < 1.0 && !trail.samples.isEmpty()) {
-                appendPickupFlash(vertices, trail.samples.get(trail.samples.size() - 1).position, camera,
+            if (cfg.pickupFlash && trail.flashProgress >= 0.0 && trail.flashProgress < 1.0 && trail.pickupPosition != null) {
+                appendPickupFlash(vertices, trail.pickupPosition, camera,
                         trail.flashProgress, cfg.effectStrength * cfg.pickupFlashStrength,
                         cfg.pickupFlashSize, cfg.pickupFlashStyle, "solid".equals(cfg.colorMode) ? cfg.startColor : cfg.endColor,
                         cfg.colorMode, cfg.rainbowSpeed, trail.now);
@@ -498,7 +506,8 @@ public final class TrailRenderer {
         final List<Point> points = new ArrayList<>();
         long lastSeen;
         long disappearedAt;
-        boolean pickupConfirmed;
+        long pickupAt;
+        Vec3 pickupPosition;
 
         void append(Vec3 position, long now, double spacing) {
             if (points.isEmpty()) {
@@ -537,5 +546,5 @@ public final class TrailRenderer {
 
     private record Point(Vec3 position, long time) { }
     private record Sample(Vec3 position, long time) { }
-    private record RenderTrail(List<Sample> samples, long now, double opacity, double flashProgress) { }
+    private record RenderTrail(List<Sample> samples, long now, double opacity, double flashProgress, Vec3 pickupPosition) { }
 }
