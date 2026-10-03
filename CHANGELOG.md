@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.2 — Minecraft 26.2
+## 1.0.3 — Minecraft 26.2
 
 - Trigger pickup flashes from vanilla pickup packets, including stationary and partially collected orbs.
 - Avoid false pickup flashes when nearby orbs disappear for other reasons.
@@ -10,6 +10,8 @@
 - Avoid copying control-point lists and pre-size curve sample buffers.
 - Choose unused automatic names for saved colors and profiles after deletion.
 - Refresh menu sections and deletion confirmations without unnecessary configuration writes.
+
+## 1.0.2 — Minecraft 26.2
 
 - Add a cross-section slider from a camera-facing ribbon (2 sides) to a round approximation (32 sides).
 - Default new configurations to a 2-sided ribbon with a trail width of 0.1; preserve existing settings.
