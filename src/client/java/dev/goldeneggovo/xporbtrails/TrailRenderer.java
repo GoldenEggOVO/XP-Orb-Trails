@@ -42,6 +42,10 @@ import java.util.OptionalDouble;
 public final class TrailRenderer {
     private static final int CURVE_STEPS = 4;
     private static final int MAX_POINTS = 128;
+    private static final double[][] CIRCLE_DIRECTIONS = circleDirections();
+    // Only the render thread uses these buffers; adjacent rings are emitted immediately.
+    private static final double[] RING_A = new double[32 * 3];
+    private static final double[] RING_B = new double[32 * 3];
     private static final RenderPipeline ALPHA_PIPELINE = createPipeline("xp_orb_trails_alpha",
             new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA));
     private static final RenderPipeline ADDITIVE_PIPELINE = createPipeline("xp_orb_trails_additive",
@@ -133,7 +137,7 @@ public final class TrailRenderer {
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
         Vec3 camera = context.camera().position();
         double rangeSq = cfg.renderRange * cfg.renderRange;
-        List<RenderTrail> snapshot = new ArrayList<>();
+        List<RenderTrail> snapshot = new ArrayList<>(TRAILS.size());
 
         float partialTick = Math.max(0.0F, Math.min(1.0F,
                 context.deltaTracker().getGameTimeDeltaPartialTick(true)));
@@ -219,14 +223,9 @@ public final class TrailRenderer {
                                    double rainbowSpeed, double tailScale, double middleScale, double headScale, int sides) {
         if (samples.size() < 2) return;
         int faces = Math.max(2, Math.min(32, sides));
-        Vec3[][] rings = new Vec3[samples.size()][faces];
-        int[] colors = new int[samples.size()];
-        Frame[] frames = faces == 2 ? null : trailFrames(samples);
-        double[] cos = new double[faces], sin = new double[faces];
-        for (int face = 0; face < faces; face++) {
-            double angle = Math.PI * 2.0 * face / faces;
-            cos[face] = Math.cos(angle); sin[face] = Math.sin(angle);
-        }
+        double[] previousRing = RING_A, ring = RING_B;
+        int previousColor = 0;
+        Vec3 normal = null, binormal = new Vec3(0, 0, 1);
         Vec3 previousRight = null;
 
         for (int i = 0; i < samples.size(); i++) {
@@ -254,33 +253,62 @@ public final class TrailRenderer {
                 rgb = mixColor(startColor, endColor, (float) progress);
             }
             int alpha = (int) (255.0 * opacity * ageFade * (0.18 + 0.82 * headFade));
-            colors[i] = (Math.max(0, Math.min(255, alpha)) << 24) | rgb;
+            int color = (Math.max(0, Math.min(255, alpha)) << 24) | rgb;
 
+            Vec3 direction = tangent(samples, i);
             if (faces == 2) {
-                Vec3 right = billboardRight(tangent(samples, i), camera.subtract(sample.position), previousRight);
-                previousRight = right;
-                rings[i][0] = sample.position.add(right.scale(radius)).subtract(camera);
-                rings[i][1] = sample.position.subtract(right.scale(radius)).subtract(camera);
-                continue;
+                previousRight = billboardRight(direction, camera.subtract(sample.position), previousRight);
+                Vec3 right = previousRight.scale(radius);
+                ring[0] = sample.position.x + right.x - camera.x;
+                ring[1] = sample.position.y + right.y - camera.y;
+                ring[2] = sample.position.z + right.z - camera.z;
+                ring[3] = sample.position.x - right.x - camera.x;
+                ring[4] = sample.position.y - right.y - camera.y;
+                ring[5] = sample.position.z - right.z - camera.z;
+            } else {
+                normal = normal == null ? initialNormal(direction)
+                        : normalized(normal.subtract(direction.scale(normal.dot(direction))), initialNormal(direction));
+                binormal = normalized(direction.cross(normal), binormal);
+                double[] circle = CIRCLE_DIRECTIONS[faces];
+                for (int face = 0; face < faces; face++) {
+                    double a = circle[face * 2] * radius, b = circle[face * 2 + 1] * radius;
+                    int offset = face * 3;
+                    ring[offset] = sample.position.x + normal.x * a + binormal.x * b - camera.x;
+                    ring[offset + 1] = sample.position.y + normal.y * a + binormal.y * b - camera.y;
+                    ring[offset + 2] = sample.position.z + normal.z * a + binormal.z * b - camera.z;
+                }
             }
-            for (int face = 0; face < faces; face++) {
-                rings[i][face] = sample.position
-                        .add(frames[i].normal.scale(cos[face] * radius))
-                        .add(frames[i].binormal.scale(sin[face] * radius))
-                        .subtract(camera);
+            if (i > 0) {
+                // A billboard is one double-sided quad, not two overlapping faces.
+                for (int face = 0; face < (faces == 2 ? 1 : faces); face++) {
+                    int next = (face + 1) % faces;
+                    vertex(out, previousRing, face, previousColor);
+                    vertex(out, ring, face, color);
+                    vertex(out, ring, next, color);
+                    vertex(out, previousRing, next, previousColor);
+                }
             }
+            double[] swap = previousRing; previousRing = ring; ring = swap;
+            previousColor = color;
         }
+    }
 
-        for (int i = 0; i < rings.length - 1; i++) {
-            // A billboard is one double-sided quad, not two overlapping faces.
-            for (int face = 0; face < (faces == 2 ? 1 : faces); face++) {
-                int next = (face + 1) % faces;
-                vertex(out, rings[i][face], colors[i]);
-                vertex(out, rings[i + 1][face], colors[i + 1]);
-                vertex(out, rings[i + 1][next], colors[i + 1]);
-                vertex(out, rings[i][next], colors[i]);
+    private static double[][] circleDirections() {
+        double[][] directions = new double[33][];
+        for (int faces = 3; faces <= 32; faces++) {
+            directions[faces] = new double[faces * 2];
+            for (int face = 0; face < faces; face++) {
+                double angle = Math.PI * 2.0 * face / faces;
+                directions[faces][face * 2] = Math.cos(angle);
+                directions[faces][face * 2 + 1] = Math.sin(angle);
             }
         }
+        return directions;
+    }
+
+    private static void vertex(VertexConsumer out, double[] ring, int face, int color) {
+        int offset = face * 3;
+        out.addVertex((float) ring[offset], (float) ring[offset + 1], (float) ring[offset + 2]).setColor(color);
     }
 
     static Vec3 billboardRight(Vec3 tangent, Vec3 view, Vec3 previous) {
@@ -354,22 +382,6 @@ public final class TrailRenderer {
         return result.lengthSqr() < 1.0E-8 ? new Vec3(0, 1, 0) : result.normalize();
     }
 
-    private static Frame[] trailFrames(List<Sample> samples) {
-        Frame[] result = new Frame[samples.size()];
-        Vec3 tangent = tangent(samples, 0);
-        Vec3 normal = initialNormal(tangent);
-        Vec3 binormal = normalized(tangent.cross(normal), new Vec3(0, 0, 1));
-        result[0] = new Frame(normal, binormal);
-        for (int i = 1; i < samples.size(); i++) {
-            tangent = tangent(samples, i);
-            Vec3 transported = normal.subtract(tangent.scale(normal.dot(tangent)));
-            normal = normalized(transported, initialNormal(tangent));
-            binormal = normalized(tangent.cross(normal), binormal);
-            result[i] = new Frame(normal, binormal);
-        }
-        return result;
-    }
-
     private static Vec3 initialNormal(Vec3 tangent) {
         Vec3 axis = Math.abs(tangent.y) < 0.92 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0);
         return normalized(tangent.cross(axis), new Vec3(1, 0, 0));
@@ -384,25 +396,21 @@ public final class TrailRenderer {
     private static double smoothStep(double value) { value = clamp(value); return value * value * (3.0 - 2.0 * value); }
 
     private static List<Sample> sampleCurve(List<Point> originalPoints, Vec3 livePoint) {
-        List<Point> points = originalPoints;
-        if (livePoint != null && !originalPoints.isEmpty()) {
-            points = new ArrayList<>(originalPoints);
-            Point last = points.get(points.size() - 1);
-            points.set(points.size() - 1, new Point(livePoint, last.time));
-        }
-        List<Sample> result = new ArrayList<>();
-        for (int i = 0; i < points.size() - 1; i++) {
-            Point p0 = points.get(Math.max(0, i - 1));
-            Point p1 = points.get(i);
-            Point p2 = points.get(i + 1);
-            Point p3 = points.get(Math.min(points.size() - 1, i + 2));
+        int lastIndex = originalPoints.size() - 1;
+        Point last = originalPoints.get(lastIndex);
+        if (livePoint != null) last = new Point(livePoint, last.time);
+        List<Sample> result = new ArrayList<>(lastIndex * CURVE_STEPS + 1);
+        for (int i = 0; i < lastIndex; i++) {
+            Point p0 = originalPoints.get(Math.max(0, i - 1));
+            Point p1 = originalPoints.get(i);
+            Point p2 = i + 1 == lastIndex ? last : originalPoints.get(i + 1);
+            Point p3 = i + 2 >= lastIndex ? last : originalPoints.get(i + 2);
             for (int step = 0; step < CURVE_STEPS; step++) {
                 double t = step / (double) CURVE_STEPS;
                 result.add(new Sample(catmull(p0.position, p1.position, p2.position, p3.position, t),
                         (long) (p1.time + (p2.time - p1.time) * t)));
             }
         }
-        Point last = points.get(points.size() - 1);
         result.add(new Sample(last.position, last.time));
         return result;
     }
@@ -530,5 +538,4 @@ public final class TrailRenderer {
     private record Point(Vec3 position, long time) { }
     private record Sample(Vec3 position, long time) { }
     private record RenderTrail(List<Sample> samples, long now, double opacity, double flashProgress) { }
-    private record Frame(Vec3 normal, Vec3 binormal) { }
 }

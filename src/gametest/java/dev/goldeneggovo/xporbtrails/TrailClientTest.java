@@ -65,26 +65,34 @@ public final class TrailClientTest implements FabricClientGameTest {
                         "Individual color controls must show exactly one swatch");
             }
             for (int i = 0; i < 12; i++) XpOrbTrailsClient.CONFIG.savedPresets.add(
-                    new TrailConfig.SavedPreset("Color " + i, i, i + 1));
+                    new TrailConfig.SavedPreset(net.minecraft.network.chat.Component.translatable(
+                            "screen.xporbtrails.saved_preset_name", i + 1).getString(), i, i + 1));
         });
         context.clickScreenButton("screen.xporbtrails.common");
         context.clickScreenButton("screen.xporbtrails.appearance");
         context.runOnClient(client -> check(widgets(client.gui.screen()).stream().anyMatch(w ->
                 w.getMessage().getString().equals(net.minecraft.network.chat.Component.translatable(
                         "screen.xporbtrails.save_preset").getString()) && !w.active), "Saving must stop at twelve colors"));
+        var beforeFold = configModifiedTime();
         click(context, "screen.xporbtrails.expand");
+        check(configModifiedTime().equals(beforeFold), "Expanding a settings section must not write the config");
         click(context, "screen.xporbtrails.delete_color");
+        check(configModifiedTime().equals(beforeFold), "Arming deletion must not write the config");
         context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 12,
                 "Deleting a color must require confirmation"));
         click(context, "screen.xporbtrails.confirm_delete_color");
         context.runOnClient(client -> {
             check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 11, "Confirmed deletion must free a color slot");
-            check("Color 1".equals(XpOrbTrailsClient.CONFIG.savedPresets.getFirst().name),
+            check(net.minecraft.network.chat.Component.translatable("screen.xporbtrails.saved_preset_name", 2)
+                            .getString().equals(XpOrbTrailsClient.CONFIG.savedPresets.getFirst().name),
                     "Deletion must preserve the other saved colors");
         });
         click(context, "screen.xporbtrails.save_preset");
-        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 12,
-                "A freed color slot must be reusable"));
+        context.runOnClient(client -> {
+            check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 12, "A freed color slot must be reusable");
+            check(XpOrbTrailsClient.CONFIG.savedPresets.stream().map(p -> p.name).distinct().count() == 12,
+                    "Saving after deletion must not duplicate an existing color name");
+        });
         context.takeScreenshot("saved-colors-management");
         click(context, "screen.xporbtrails.mode.gradient");
         context.waitForScreen(TrailChoiceScreen.class);
@@ -131,6 +139,13 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedProfiles.size() == 1, "Delete must require confirmation"));
         click(context, "screen.xporbtrails.confirm_delete_profile");
         context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedProfiles.isEmpty(), "Confirmed deletion must remove the profile"));
+        context.runOnClient(client -> XpOrbTrailsClient.CONFIG.savedProfiles.add(new TrailConfig.SavedProfile(
+                net.minecraft.network.chat.Component.translatable("screen.xporbtrails.saved_profile_name", 2).getString(), new TrailConfig())));
+        context.clickScreenButton("screen.xporbtrails.common");
+        context.clickScreenButton("screen.xporbtrails.profiles");
+        click(context, "screen.xporbtrails.save_profile");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedProfiles.stream().map(p -> p.name).distinct().count() == 2,
+                "Saving a profile must choose an unused name"));
         context.clickScreenButton("screen.xporbtrails.common");
         context.runOnClient(client -> {
             var list = (TrailSettingsList) client.gui.screen().children().stream().filter(w -> w instanceof TrailSettingsList).findFirst().orElseThrow();
@@ -247,6 +262,13 @@ public final class TrailClientTest implements FabricClientGameTest {
         if (!success) failures.add(message);
     }
 
+    private static java.nio.file.attribute.FileTime configModifiedTime() {
+        try {
+            return java.nio.file.Files.getLastModifiedTime(net.fabricmc.loader.api.FabricLoader.getInstance()
+                    .getConfigDir().resolve("xp-orb-trails.json"));
+        } catch (java.io.IOException exception) { throw new AssertionError(exception); }
+    }
+
     private void verifyCrossSectionGeometry() {
         var tangent = new net.minecraft.world.phys.Vec3(1, 0, 0);
         for (var view : List.of(new net.minecraft.world.phys.Vec3(0, 0, 1),
@@ -266,19 +288,32 @@ public final class TrailClientTest implements FabricClientGameTest {
             append.setAccessible(true);
             for (int sides : new int[]{2, 3, 8, 32}) {
                 int[] vertices = {0};
+                long[] fingerprint = {1};
                 var out = java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
                         new Class<?>[]{com.mojang.blaze3d.vertex.VertexConsumer.class}, (proxy, method, args) -> {
                             if (method.getName().equals("addVertex") && args.length == 3) {
                                 vertices[0]++;
-                                for (Object coordinate : args) check(Float.isFinite(((Number) coordinate).floatValue()),
-                                        "Cross-section vertices must be finite");
+                                for (Object coordinate : args) {
+                                    float value = ((Number) coordinate).floatValue();
+                                    check(Float.isFinite(value), "Cross-section vertices must be finite");
+                                    fingerprint[0] = fingerprint[0] * 31 + Float.floatToIntBits(value);
+                                }
                             }
+                            if (method.getName().equals("setColor") && args.length == 1)
+                                fingerprint[0] = fingerprint[0] * 31 + ((Number) args[0]).intValue();
                             return proxy;
                         });
                 append.invoke(null, out, samples, new net.minecraft.world.phys.Vec3(0, 0, 3),
                         0L, 100L, 0.24, 0.78, 0xFFFFFF, 0xFFFFFF, "solid", 0.2, 1.0, 1.0, 1.0, sides);
                 check(vertices[0] == 8 * (sides == 2 ? 1 : sides),
                         "Mesh must emit the selected face count without doubling the billboard");
+                long expected = switch (sides) {
+                    case 2 -> 6052789791297900145L;
+                    case 3 -> 61044112680327065L;
+                    case 8 -> 4513098808163761609L;
+                    default -> -2688908051212465271L;
+                };
+                check(fingerprint[0] == expected, "Optimized vertices and colors must match the original mesh for " + sides + " sides");
             }
         } catch (ReflectiveOperationException exception) { throw new AssertionError(exception); }
     }

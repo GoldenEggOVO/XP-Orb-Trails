@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Minecraft 26.3
+
+- Stream trail meshes through reusable ring buffers and cache circular cross-section directions.
+- Avoid copying control-point lists and pre-size curve sample buffers.
+- Choose unused automatic names for saved colors and profiles after deletion.
+- Refresh menu sections and deletion confirmations without unnecessary configuration writes.
+
 ## 1.1.1 — Minecraft 26.3
 
 - Add a cross-section slider from a camera-facing ribbon (2 sides) to a round approximation (32 sides).
