@@ -50,7 +50,10 @@ translation is unavailable; English and Simplified Chinese are included.
 Open the settings screen through Mod Menu's Config button or bind
 **Open Trail Settings** in Minecraft's Controls screen. Changes apply
 immediately and are saved to `config/xp-orb-trails.json` when the screen closes.
-Settings are grouped into **Common**, **Appearance**, **Advanced**, and **My Profiles**.
+Settings are grouped into **Common**, **Appearance**, **Advanced**, and **Profiles**.
+Common contains overall effects and trail width and timing. Appearance contains
+colors, shape, and pickup flash controls. Advanced contains motion, position,
+and performance settings. Profiles contains built-in and saved configurations.
 Lists support scrolling and keyboard navigation; detailed shape, flash, and position
 controls expand only when needed. Wide windows show a live preview beside the settings.
 Each editable settings page has its own reset button, and hovering over a control

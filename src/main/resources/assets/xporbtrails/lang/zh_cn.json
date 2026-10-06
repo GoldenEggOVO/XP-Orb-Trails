@@ -6,10 +6,10 @@
   "key.xporbtrails.open_settings": "打开尾迹设置",
   "screen.xporbtrails.title": "经验球尾迹设置",
   "screen.xporbtrails.appearance": "外观",
-  "screen.xporbtrails.animation": "动画",
-  "screen.xporbtrails.pickup": "拾取效果",
+  "screen.xporbtrails.animation": "运动与位置",
+  "screen.xporbtrails.pickup": "拾取闪光",
   "screen.xporbtrails.performance": "性能",
-  "screen.xporbtrails.profiles": "我的方案",
+  "screen.xporbtrails.profiles": "方案",
   "screen.xporbtrails.enabled": "启用尾迹",
   "screen.xporbtrails.glow": "增强发光",
   "screen.xporbtrails.start_color": "起始颜色",
@@ -111,7 +111,7 @@
   "screen.xporbtrails.colors": "颜色",
   "screen.xporbtrails.shape": "形状",
   "screen.xporbtrails.effect_strength": "效果强度",
-  "screen.xporbtrails.effect_strength.tip": "控制整体可见强度，合并原有透明度与发光强度。",
+  "screen.xporbtrails.effect_strength.tip": "同时控制尾迹与拾取闪光的整体可见强度。",
   "screen.xporbtrails.custom_shape": "自定义形状",
   "screen.xporbtrails.custom_shape.tip": "分别微调尾端、中部和头部的粗细比例。",
   "screen.xporbtrails.pickup_details": "闪光细节",
@@ -145,5 +145,6 @@
   "screen.xporbtrails.color_name.tip": "输入名称后点击重命名。",
   "screen.xporbtrails.rename_color": "重命名",
   "screen.xporbtrails.overwrite_color": "用当前配色覆盖",
-  "screen.xporbtrails.preview_cross_section": "截面示意"
+  "screen.xporbtrails.preview_cross_section": "截面示意",
+  "screen.xporbtrails.overall_effects": "整体效果"
 }

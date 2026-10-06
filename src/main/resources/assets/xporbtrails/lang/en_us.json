@@ -6,10 +6,10 @@
   "key.xporbtrails.open_settings": "Open Trail Settings",
   "screen.xporbtrails.title": "XP Orb Trail Settings",
   "screen.xporbtrails.appearance": "Appearance",
-  "screen.xporbtrails.animation": "Animation",
-  "screen.xporbtrails.pickup": "Pickup Effect",
+  "screen.xporbtrails.animation": "Motion and Position",
+  "screen.xporbtrails.pickup": "Pickup Flash",
   "screen.xporbtrails.performance": "Performance",
-  "screen.xporbtrails.profiles": "My Profiles",
+  "screen.xporbtrails.profiles": "Profiles",
   "screen.xporbtrails.enabled": "Enable Trails",
   "screen.xporbtrails.glow": "Enhanced Glow",
   "screen.xporbtrails.start_color": "Start Color",
@@ -111,7 +111,7 @@
   "screen.xporbtrails.colors": "Colors",
   "screen.xporbtrails.shape": "Shape",
   "screen.xporbtrails.effect_strength": "Effect Strength",
-  "screen.xporbtrails.effect_strength.tip": "Controls overall visibility and glow. Replaces opacity and glow strength.",
+  "screen.xporbtrails.effect_strength.tip": "Controls the overall visibility of both trails and pickup flashes.",
   "screen.xporbtrails.custom_shape": "Custom Shape",
   "screen.xporbtrails.custom_shape.tip": "Fine-tune the tail, middle, and head proportions.",
   "screen.xporbtrails.pickup_details": "Flash Details",
@@ -145,5 +145,6 @@
   "screen.xporbtrails.color_name.tip": "Enter a name, then press Rename.",
   "screen.xporbtrails.rename_color": "Rename",
   "screen.xporbtrails.overwrite_color": "Overwrite with Current Colors",
-  "screen.xporbtrails.preview_cross_section": "Cross-section Diagram"
+  "screen.xporbtrails.preview_cross_section": "Cross-section Diagram",
+  "screen.xporbtrails.overall_effects": "Overall Effects"
 }

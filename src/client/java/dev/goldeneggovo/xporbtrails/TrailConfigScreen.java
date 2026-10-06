@@ -99,12 +99,13 @@ public final class TrailConfigScreen extends Screen {
             choose("profile", choices);
         });
         row("profile", profileButton);
+        section("overall_effects");
+        slider("effect_strength", c.effectStrength, 0.005, 2.0, 2, v -> c.effectStrength = v);
+        toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
         section("trail");
         slider("width", c.width, 0.02, 1.0, 2, v -> c.width = v);
         slider("lifetime", c.lifetimeSeconds, 0.25, 10.0, 2, v -> c.lifetimeSeconds = v);
         slider("pickup_fade", c.pickupFadeSeconds, 0.05, 3.0, 2, v -> c.pickupFadeSeconds = v);
-        slider("effect_strength", c.effectStrength, 0.005, 2.0, 2, v -> c.effectStrength = v);
-        toggle("pickup_flash", c.pickupFlash, v -> c.pickupFlash = v);
     }
 
     private void appearance() {
@@ -165,7 +166,6 @@ public final class TrailConfigScreen extends Screen {
                 }));
             }
         }
-        toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
         section("shape");
         row("cross_section", new AbstractSliderButton(0, 0, 150, 20,
                 crossSectionLabel(c.crossSectionSides), (c.crossSectionSides - 2) / 30.0) {
@@ -191,9 +191,9 @@ public final class TrailConfigScreen extends Screen {
             slider("head_width", c.headWidthScale, 0.05, 2.0, 2, v -> c.headWidthScale = v);
         }
         section("pickup");
-        if (!c.pickupFlash) {
-            row("pickup_flash", button(text("enable"), () -> { c.pickupFlash = true; changed(); saveAndRefresh(); }));
-        } else {
+        row("pickup_flash", CycleButton.onOffBuilder(c.pickupFlash).displayOnlyValue().create(0, 0, 150, 20,
+                text("pickup_flash"), (b, v) -> { c.pickupFlash = v; changed(); saveAndRefresh(); }));
+        if (c.pickupFlash) {
             select("flash_style", "flash_style.", c.pickupFlashStyle, List.of("soft", "star", "ring"), v -> c.pickupFlashStyle = v);
             fold("pickup_details", pickupDetails, () -> { pickupDetails = !pickupDetails; refresh(); });
             if (pickupDetails) {
@@ -304,14 +304,14 @@ public final class TrailConfigScreen extends Screen {
             case COMMON -> {
                 c.enabled = d.enabled; c.width = d.width; c.lifetimeSeconds = d.lifetimeSeconds;
                 c.pickupFadeSeconds = d.pickupFadeSeconds;
-                c.effectStrength = d.effectStrength; c.pickupFlash = d.pickupFlash;
+                c.effectStrength = d.effectStrength; c.additiveGlow = d.additiveGlow;
             }
             case APPEARANCE -> {
                 c.colorMode = d.colorMode; c.startColor = d.startColor; c.endColor = d.endColor;
-                c.rainbowSpeed = d.rainbowSpeed; c.additiveGlow = d.additiveGlow;
+                c.rainbowSpeed = d.rainbowSpeed;
                 c.tailWidthScale = d.tailWidthScale; c.middleWidthScale = d.middleWidthScale; c.headWidthScale = d.headWidthScale;
                 c.crossSectionSides = d.crossSectionSides;
-                c.pickupFlashStyle = d.pickupFlashStyle; c.pickupFlashStrength = d.pickupFlashStrength;
+                c.pickupFlash = d.pickupFlash; c.pickupFlashStyle = d.pickupFlashStyle; c.pickupFlashStrength = d.pickupFlashStrength;
                 c.pickupFlashSeconds = d.pickupFlashSeconds; c.pickupFlashSize = d.pickupFlashSize;
             }
             case ADVANCED -> {
