@@ -144,5 +144,6 @@
   "screen.xporbtrails.color_name": "Color Preset Name",
   "screen.xporbtrails.color_name.tip": "Enter a name, then press Rename.",
   "screen.xporbtrails.rename_color": "Rename",
-  "screen.xporbtrails.overwrite_color": "Overwrite with Current Colors"
+  "screen.xporbtrails.overwrite_color": "Overwrite with Current Colors",
+  "screen.xporbtrails.preview_cross_section": "Cross-section Diagram"
 }

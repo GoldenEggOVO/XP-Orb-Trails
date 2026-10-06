@@ -104,12 +104,46 @@ public final class TrailPreviewScreen extends Screen {
         int headY = pathY(centerY, h, travel, seconds);
         drawOrb(graphics, headX, headY, c.endColor);
 
-        if (c.enabled && c.pickupFlash && cycle >= 4.0 && cycle < 4.0 + c.pickupFlashSeconds * 2.4) {
-            double p = Math.min(1.0, (cycle - 4.0) / Math.max(0.12, c.pickupFlashSeconds * 2.4));
-            drawFlash(graphics, headX, headY, p, c, seconds);
+        double flashProgress = pickupProgress(cycle, c.pickupFlashSeconds);
+        if (c.enabled && c.pickupFlash && flashProgress >= 0.0 && flashProgress < 1.0) {
+            drawFlash(graphics, headX, headY, flashProgress, c, seconds);
         }
 
+        graphics.fill(x + 8, y + h - 60, x + w - 8, y + h - 27, 0xB00A1018);
+        graphics.text(font, Component.translatable("screen.xporbtrails.preview_cross_section"), x + 12, y + h - 47, 0xFFBFD9C8);
+        drawCrossSection(graphics, x + w - 30, y + h - 44, c.crossSectionSides, colorAt(c, 1, seconds));
         if (!compact) graphics.centeredText(font, Component.translatable("screen.xporbtrails.preview_hint"), x + w / 2, y + h - 15, 0xAAADC8B6);
+    }
+
+    static double pickupProgress(double cycle, double duration) {
+        return (cycle - 4.0) / duration;
+    }
+
+    static double[] crossSectionVertices(int sides, double radius) {
+        if (sides == 2) return new double[]{-radius, -1.5, radius, -1.5, radius, 1.5, -radius, 1.5};
+        double[] vertices = new double[sides * 2];
+        for (int i = 0; i < sides; i++) {
+            double angle = Math.PI * 2 * i / sides - Math.PI / 2;
+            vertices[i * 2] = Math.cos(angle) * radius;
+            vertices[i * 2 + 1] = Math.sin(angle) * radius;
+        }
+        return vertices;
+    }
+
+    private void drawCrossSection(GuiGraphicsExtractor graphics, int x, int y, int sides, int rgb) {
+        double[] vertices = crossSectionVertices(sides, 12);
+        for (int row = -12; row < 12; row++) {
+            double scan = row + 0.5, left = Double.POSITIVE_INFINITY, right = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < vertices.length; i += 2) {
+                int next = (i + 2) % vertices.length;
+                double y0 = vertices[i + 1], y1 = vertices[next + 1];
+                if ((y0 > scan) == (y1 > scan)) continue;
+                double edge = vertices[i] + (scan - y0) * (vertices[next] - vertices[i]) / (y1 - y0);
+                left = Math.min(left, edge); right = Math.max(right, edge);
+            }
+            if (left <= right) graphics.fill(x + (int) Math.floor(left), y + row,
+                    x + (int) Math.ceil(right), y + row + 1, 0xFF000000 | rgb);
+        }
     }
 
     private void glowSquare(GuiGraphicsExtractor graphics, int x, int y, int radius, int rgb, int alpha) {

@@ -9,6 +9,59 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TrailConfigTest {
     @Test
+    void repairsNonFiniteNumbersWithoutDiscardingOtherSettings() throws ReflectiveOperationException {
+        Gson gson = new Gson();
+        TrailConfig defaults = new TrailConfig();
+        for (var field : TrailConfig.class.getFields()) {
+            if (field.getType() != double.class) continue;
+            for (String value : new String[]{"NaN", "Infinity", "-Infinity"}) {
+                var json = gson.toJsonTree(defaults).getAsJsonObject();
+                json.addProperty(field.getName(), value);
+                json.addProperty("startColor", 0x123456);
+                TrailConfig repaired = gson.fromJson(json, TrailConfig.class).sanitized();
+                assertEquals(field.getDouble(defaults), field.getDouble(repaired), field.getName() + "=" + value);
+                assertEquals(0x123456, repaired.startColor);
+                gson.toJson(repaired);
+            }
+        }
+    }
+
+    @Test
+    void repairsNonFiniteSavedProfilesBeforeSavingAndApplying() throws ReflectiveOperationException {
+        Gson gson = new Gson();
+        TrailConfig defaults = new TrailConfig();
+        for (var field : TrailConfig.SavedProfile.class.getFields()) {
+            if (field.getType() != double.class) continue;
+            for (double value : new double[]{Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}) {
+                TrailConfig config = new TrailConfig();
+                var profile = new TrailConfig.SavedProfile("Keep my name", defaults);
+                field.setDouble(profile, value);
+                config.savedProfiles.add(profile);
+                config.sanitized();
+                assertEquals(TrailConfig.class.getField(field.getName()).getDouble(defaults), field.getDouble(profile), field.getName());
+                assertEquals("Keep my name", profile.name);
+                profile.applyTo(config);
+                gson.toJson(config);
+            }
+        }
+    }
+
+    @Test
+    void repairsNonFiniteLegacyValuesBeforeMigration() {
+        Gson gson = new Gson();
+        TrailConfig config = gson.fromJson("""
+                {"configVersion":8,"width":"NaN","opacity":"NaN","glowStrength":"Infinity",
+                 "pickupFlashSize":"NaN","savedProfiles":[
+                   {"name":"Legacy","width":"NaN","opacity":"NaN","glowStrength":"NaN","pickupFlashSize":"NaN"}
+                 ]}
+                """, TrailConfig.class).sanitized();
+        gson.toJson(config);
+        config.savedProfiles.getFirst().applyTo(config);
+        assertEquals(true, Double.isFinite(config.width) && Double.isFinite(config.effectStrength)
+                && Double.isFinite(config.pickupFlashSize));
+    }
+
+    @Test
     void crossSectionSurvivesProfilesAndReloadAndClampsInvalidValues() {
         Gson gson = new Gson();
         TrailConfig config = gson.fromJson("{\"crossSectionSides\":32}", TrailConfig.class).sanitized();

@@ -2,6 +2,9 @@
 
 ## Unreleased — 1.2.0 for Minecraft 26.3
 
+- Repair non-finite numeric values in configuration files and saved profiles before saving.
+- Show a ribbon or polygon diagram for the selected cross-section in the preview.
+- Match preview pickup flash timing to the configured in-game duration.
 - Keep the enabled state, render range, and trail limit when applying built-in appearance presets.
 - Preserve full configuration restoration for saved custom profiles.
 - Replay the pickup flash immediately in the preview.

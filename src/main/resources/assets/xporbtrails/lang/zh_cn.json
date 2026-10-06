@@ -144,5 +144,6 @@
   "screen.xporbtrails.color_name": "配色名称",
   "screen.xporbtrails.color_name.tip": "输入名称后点击重命名。",
   "screen.xporbtrails.rename_color": "重命名",
-  "screen.xporbtrails.overwrite_color": "用当前配色覆盖"
+  "screen.xporbtrails.overwrite_color": "用当前配色覆盖",
+  "screen.xporbtrails.preview_cross_section": "截面示意"
 }
