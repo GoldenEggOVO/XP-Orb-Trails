@@ -73,11 +73,19 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.takeScreenshot("preview-replay-pickup");
         context.runOnClient(client -> client.gui.screen().onClose());
         context.clickScreenButton("screen.xporbtrails.appearance");
-        context.runOnClient(client -> XpOrbTrailsClient.CONFIG.pickupFadeSeconds = 1.1);
+        context.runOnClient(client -> {
+            XpOrbTrailsClient.CONFIG.pickupFadeSeconds = 1.1;
+            XpOrbTrailsClient.CONFIG.pickupFlash = false;
+            XpOrbTrailsClient.CONFIG.additiveGlow = false;
+            XpOrbTrailsClient.CONFIG.effectStrength = 0.91;
+        });
         context.clickScreenButton("screen.xporbtrails.reset");
         context.runOnClient(client -> {
             check("soft".equals(XpOrbTrailsClient.CONFIG.pickupFlashStyle), "Reset pickup page must restore the flash style");
             check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == 1.1, "Appearance reset must preserve Common trail fading");
+            check(XpOrbTrailsClient.CONFIG.pickupFlash, "Appearance reset must restore the pickup flash toggle");
+            check(!XpOrbTrailsClient.CONFIG.additiveGlow && XpOrbTrailsClient.CONFIG.effectStrength == 0.91,
+                    "Appearance reset must preserve Common overall effects");
         });
         context.waitTicks(3);
         context.takeScreenshot("menu-appearance-small");
@@ -200,9 +208,15 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == 1.1,
                 "Advanced reset must preserve Common trail fading"));
         context.clickScreenButton("screen.xporbtrails.common");
+        context.runOnClient(client -> XpOrbTrailsClient.CONFIG.pickupFlash = false);
         context.clickScreenButton("screen.xporbtrails.reset");
-        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == new TrailConfig().pickupFadeSeconds,
-                "Common reset must restore trail disappearance fading"));
+        context.runOnClient(client -> {
+            check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == new TrailConfig().pickupFadeSeconds,
+                    "Common reset must restore trail disappearance fading");
+            check(XpOrbTrailsClient.CONFIG.additiveGlow && XpOrbTrailsClient.CONFIG.effectStrength == new TrailConfig().effectStrength,
+                    "Common reset must restore overall effects");
+            check(!XpOrbTrailsClient.CONFIG.pickupFlash, "Common reset must preserve Appearance pickup flash settings");
+        });
         context.takeScreenshot("menu-common-fade");
         context.runOnClient(client -> {
             XpOrbTrailsClient.CONFIG.savedProfiles.add(new TrailConfig.SavedProfile("Regression", new TrailConfig()));
