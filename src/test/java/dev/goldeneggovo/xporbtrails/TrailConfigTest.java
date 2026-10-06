@@ -123,16 +123,25 @@ class TrailConfigTest {
     @Test
     void savedProfileRestoresCapturedAppearance() {
         TrailConfig config = new TrailConfig();
+        config.enabled = false;
+        config.renderRange = 71;
+        config.trailCap = 24;
         config.width = 0.42;
         config.colorMode = "rainbow";
         config.pickupFlashStyle = "ring";
         TrailConfig.SavedProfile profile = new TrailConfig.SavedProfile("Favorite", config);
+        config.enabled = true;
+        config.renderRange = 36;
+        config.trailCap = 96;
         config.width = 0.12;
         config.colorMode = "solid";
         config.pickupFlashStyle = "soft";
 
         profile.applyTo(config);
 
+        assertEquals(false, config.enabled);
+        assertEquals(71, config.renderRange);
+        assertEquals(24, config.trailCap);
         assertEquals(0.42, config.width);
         assertEquals("rainbow", config.colorMode);
         assertEquals("ring", config.pickupFlashStyle);

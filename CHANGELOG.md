@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — 1.2.0 for Minecraft 26.3
+
+- Keep the enabled state, render range, and trail limit when applying built-in appearance presets.
+- Preserve full configuration restoration for saved custom profiles.
+- Replay the pickup flash immediately in the preview.
+- Rename and overwrite saved color pairs, including when all 12 slots are full.
+- Use `fabric-<mod-version>+<minecraft-version>` for release names and JAR filenames.
+
 ## 1.1.2 — Minecraft 26.3
 
 - Trigger pickup flashes from vanilla pickup packets, including stationary and partially collected orbs.

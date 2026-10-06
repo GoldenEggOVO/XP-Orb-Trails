@@ -36,7 +36,29 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> {
             long sliders = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton).count();
             check(sliders == 3, "Common page must have only width, retention, and effect strength sliders");
+            XpOrbTrailsClient.CONFIG.enabled = false;
+            XpOrbTrailsClient.CONFIG.renderRange = 71;
+            XpOrbTrailsClient.CONFIG.trailCap = 24;
+            XpOrbTrailsClient.CONFIG.width = 0.44;
         });
+        click(context, "screen.xporbtrails.preset.custom");
+        click(context, "screen.xporbtrails.profile.standard");
+        context.runOnClient(client -> {
+            check(!XpOrbTrailsClient.CONFIG.enabled && XpOrbTrailsClient.CONFIG.renderRange == 71
+                    && XpOrbTrailsClient.CONFIG.trailCap == 24,
+                    "Built-in looks must preserve enabled state and performance settings");
+            check(XpOrbTrailsClient.CONFIG.width == 0.1, "Built-in looks must still apply their appearance");
+            XpOrbTrailsClient.CONFIG.enabled = true;
+        });
+        context.clickScreenButton("screen.xporbtrails.open_preview");
+        context.waitForScreen(TrailPreviewScreen.class);
+        context.clickScreenButton("screen.xporbtrails.replay_pickup");
+        context.runOnClient(client -> {
+            double elapsed = (System.nanoTime() - (long) field(client.gui.screen(), "demoStartNanos")) / 1_000_000_000.0;
+            check(elapsed >= 4.0 && elapsed < 4.5, "Replay pickup must jump immediately to the flash phase");
+        });
+        context.takeScreenshot("preview-replay-pickup");
+        context.runOnClient(client -> client.gui.screen().onClose());
         context.clickScreenButton("screen.xporbtrails.appearance");
         context.clickScreenButton("screen.xporbtrails.reset");
         context.runOnClient(client -> check("soft".equals(XpOrbTrailsClient.CONFIG.pickupFlashStyle),
@@ -76,8 +98,50 @@ public final class TrailClientTest implements FabricClientGameTest {
         var beforeFold = configModifiedTime();
         click(context, "screen.xporbtrails.expand");
         check(configModifiedTime().equals(beforeFold), "Expanding a settings section must not write the config");
+        var managesColors = new java.util.concurrent.atomic.AtomicBoolean();
+        context.runOnClient(client -> {
+            managesColors.set(widgets(client.gui.screen()).stream().anyMatch(w -> w.getMessage().getString().equals(
+                    net.minecraft.network.chat.Component.translatable("screen.xporbtrails.manage_color").getString())));
+            check(managesColors.get(), "Saved colors must expose rename and overwrite management");
+        });
+        if (managesColors.get()) {
+            click(context, "screen.xporbtrails.manage_color");
+            check(configModifiedTime().equals(beforeFold), "Selecting a saved color must not write the config");
+            context.runOnClient(client -> {
+                var name = widgets(client.gui.screen()).stream().filter(w -> w instanceof net.minecraft.client.gui.components.EditBox)
+                        .map(w -> (net.minecraft.client.gui.components.EditBox) w).findFirst().orElseThrow();
+                name.setValue(" ");
+                check(widgets(client.gui.screen()).stream().anyMatch(w -> !w.active && w.getMessage().getString().equals(
+                        net.minecraft.network.chat.Component.translatable("screen.xporbtrails.rename_color").getString())),
+                        "Blank saved color names must disable Rename");
+                name.setValue("Renamed Color");
+            });
+            click(context, "screen.xporbtrails.rename_color");
+            context.runOnClient(client -> {
+                check("Renamed Color".equals(XpOrbTrailsClient.CONFIG.savedPresets.getFirst().name),
+                        "Renaming a color must preserve the saved entry");
+                XpOrbTrailsClient.CONFIG.startColor = 0x123456;
+                XpOrbTrailsClient.CONFIG.endColor = 0xABCDEF;
+            });
+            click(context, "screen.xporbtrails.overwrite_color");
+            context.runOnClient(client -> {
+                var saved = XpOrbTrailsClient.CONFIG.savedPresets.getFirst();
+                check(saved.startColor == 0x123456 && saved.endColor == 0xABCDEF
+                                && "Renamed Color".equals(saved.name) && XpOrbTrailsClient.CONFIG.savedPresets.size() == 12,
+                        "Overwriting a full color list must replace only the selected pair and retain its name");
+                try {
+                    var persisted = new com.google.gson.Gson().fromJson(java.nio.file.Files.readString(
+                            net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("xp-orb-trails.json")), TrailConfig.class);
+                    check(persisted.savedPresets.getFirst().startColor == 0x123456
+                                    && "Renamed Color".equals(persisted.savedPresets.getFirst().name),
+                            "Saved color management must persist to disk");
+                } catch (java.io.IOException exception) { throw new AssertionError(exception); }
+            });
+            context.takeScreenshot("saved-color-edit");
+        }
+        var beforeDelete = configModifiedTime();
         click(context, "screen.xporbtrails.delete_color");
-        check(configModifiedTime().equals(beforeFold), "Arming deletion must not write the config");
+        check(configModifiedTime().equals(beforeDelete), "Arming deletion must not write the config");
         context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.savedPresets.size() == 12,
                 "Deleting a color must require confirmation"));
         click(context, "screen.xporbtrails.confirm_delete_color");

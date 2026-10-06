@@ -36,6 +36,7 @@ public final class TrailConfigScreen extends Screen {
     private double scroll;
     private boolean customShape, pickupDetails, positionDetails;
     private boolean savedColorsExpanded;
+    private int selectedColor = -1;
     private int deleteColorIndex = -1;
     private int selectedProfile = -1;
     private int deleteArmedIndex = -1;
@@ -132,17 +133,35 @@ public final class TrailConfigScreen extends Screen {
             list.row(Component.empty(), save);
         }
         fold("saved_colors", savedColorsExpanded, () -> {
-            savedColorsExpanded = !savedColorsExpanded; deleteColorIndex = -1; refresh();
+            savedColorsExpanded = !savedColorsExpanded; selectedColor = -1; deleteColorIndex = -1; refresh();
         });
         if (savedColorsExpanded) {
             for (int i = 0; i < c.savedPresets.size(); i++) {
                 int index = i;
                 TrailConfig.SavedPreset preset = c.savedPresets.get(i);
                 list.row(colorLabel(Component.literal(preset.name), preset.startColor, preset.endColor),
-                        button(text(deleteColorIndex == index ? "confirm_delete_color" : "delete_color"), () -> {
-                            if (deleteColorIndex != index) { deleteColorIndex = index; refresh(); return; }
-                            c.savedPresets.remove(index); deleteColorIndex = -1; saveAndRefresh();
+                        button(text("manage_color"), () -> {
+                            selectedColor = index; deleteColorIndex = -1; refresh();
                         }));
+                if (selectedColor != index) continue;
+                EditBox name = new EditBox(font, 0, 0, 150, 20, text("color_name"));
+                name.setMaxLength(32); name.setValue(preset.name);
+                row("color_name", name);
+                Button rename = button(text("rename_color"), () -> {
+                    String value = name.getValue().trim();
+                    if (value.isEmpty()) return;
+                    preset.name = value; saveAndRefresh();
+                });
+                name.setResponder(value -> rename.active = !value.isBlank());
+                list.row(Component.empty(), rename);
+                list.row(Component.empty(), button(text("overwrite_color"), () -> {
+                    c.savedPresets.set(index, new TrailConfig.SavedPreset(preset.name, c.startColor, c.endColor));
+                    saveAndRefresh();
+                }));
+                list.row(Component.empty(), button(text(deleteColorIndex == index ? "confirm_delete_color" : "delete_color"), () -> {
+                    if (deleteColorIndex != index) { deleteColorIndex = index; refresh(); return; }
+                    c.savedPresets.remove(index); selectedColor = -1; deleteColorIndex = -1; saveAndRefresh();
+                }));
             }
         }
         toggle("glow", c.additiveGlow, v -> c.additiveGlow = v);
@@ -268,7 +287,15 @@ public final class TrailConfigScreen extends Screen {
     }
     private Profile profile(String key, TrailConfig config) { return new Profile(text("profile." + key), new TrailConfig.SavedProfile(key, config), -1); }
     private void apply(Profile p) {
-        p.settings().applyTo(XpOrbTrailsClient.CONFIG); selectedProfile = p.savedIndex(); appliedProfile = p.name(); deleteArmedIndex = -1;
+        TrailConfig c = XpOrbTrailsClient.CONFIG;
+        boolean enabled = c.enabled;
+        double renderRange = c.renderRange;
+        int trailCap = c.trailCap;
+        p.settings().applyTo(c);
+        if (p.savedIndex() < 0) {
+            c.enabled = enabled; c.renderRange = renderRange; c.trailCap = trailCap;
+        }
+        selectedProfile = p.savedIndex(); appliedProfile = p.name(); deleteArmedIndex = -1;
     }
 
     private void resetPage() {
