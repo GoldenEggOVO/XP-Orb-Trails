@@ -102,6 +102,7 @@ public final class TrailConfigScreen extends Screen {
         section("trail");
         slider("width", c.width, 0.02, 1.0, 2, v -> c.width = v);
         slider("lifetime", c.lifetimeSeconds, 0.25, 10.0, 2, v -> c.lifetimeSeconds = v);
+        slider("pickup_fade", c.pickupFadeSeconds, 0.05, 3.0, 2, v -> c.pickupFadeSeconds = v);
         slider("effect_strength", c.effectStrength, 0.005, 2.0, 2, v -> c.effectStrength = v);
         toggle("pickup_flash", c.pickupFlash, v -> c.pickupFlash = v);
     }
@@ -201,7 +202,6 @@ public final class TrailConfigScreen extends Screen {
                 slider("pickup_flash_duration", c.pickupFlashSeconds, 0.08, 1.0, 2, v -> c.pickupFlashSeconds = v);
             }
         }
-        slider("pickup_fade", c.pickupFadeSeconds, 0.05, 3.0, 2, v -> c.pickupFadeSeconds = v);
     }
 
     private void advanced() {
@@ -303,6 +303,7 @@ public final class TrailConfigScreen extends Screen {
         switch (page) {
             case COMMON -> {
                 c.enabled = d.enabled; c.width = d.width; c.lifetimeSeconds = d.lifetimeSeconds;
+                c.pickupFadeSeconds = d.pickupFadeSeconds;
                 c.effectStrength = d.effectStrength; c.pickupFlash = d.pickupFlash;
             }
             case APPEARANCE -> {
@@ -311,7 +312,7 @@ public final class TrailConfigScreen extends Screen {
                 c.tailWidthScale = d.tailWidthScale; c.middleWidthScale = d.middleWidthScale; c.headWidthScale = d.headWidthScale;
                 c.crossSectionSides = d.crossSectionSides;
                 c.pickupFlashStyle = d.pickupFlashStyle; c.pickupFlashStrength = d.pickupFlashStrength;
-                c.pickupFlashSeconds = d.pickupFlashSeconds; c.pickupFlashSize = d.pickupFlashSize; c.pickupFadeSeconds = d.pickupFadeSeconds;
+                c.pickupFlashSeconds = d.pickupFlashSeconds; c.pickupFlashSize = d.pickupFlashSize;
             }
             case ADVANCED -> {
                 c.smoothFlow = d.smoothFlow; c.motionShift = d.motionShift; c.cameraPush = d.cameraPush;

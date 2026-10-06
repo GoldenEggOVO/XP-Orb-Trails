@@ -35,7 +35,7 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.takeScreenshot("menu-common-small");
         context.runOnClient(client -> {
             long sliders = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton).count();
-            check(sliders == 3, "Common page must have only width, retention, and effect strength sliders");
+            check(sliders == 4, "Common page must have width, retention, disappearance fade, and effect strength sliders");
             XpOrbTrailsClient.CONFIG.enabled = false;
             XpOrbTrailsClient.CONFIG.renderRange = 71;
             XpOrbTrailsClient.CONFIG.trailCap = 24;
@@ -73,9 +73,12 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.takeScreenshot("preview-replay-pickup");
         context.runOnClient(client -> client.gui.screen().onClose());
         context.clickScreenButton("screen.xporbtrails.appearance");
+        context.runOnClient(client -> XpOrbTrailsClient.CONFIG.pickupFadeSeconds = 1.1);
         context.clickScreenButton("screen.xporbtrails.reset");
-        context.runOnClient(client -> check("soft".equals(XpOrbTrailsClient.CONFIG.pickupFlashStyle),
-                "Reset pickup page must restore the flash style"));
+        context.runOnClient(client -> {
+            check("soft".equals(XpOrbTrailsClient.CONFIG.pickupFlashStyle), "Reset pickup page must restore the flash style");
+            check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == 1.1, "Appearance reset must preserve Common trail fading");
+        });
         context.waitTicks(3);
         context.takeScreenshot("menu-appearance-small");
         slideCrossSection(context, 1.0);
@@ -193,6 +196,14 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> check(widgets(client.gui.screen()).stream()
                 .filter(w -> w instanceof AbstractSliderButton).count() == 5,
                 "Expanding position details must expose both offsets"));
+        context.clickScreenButton("screen.xporbtrails.reset");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == 1.1,
+                "Advanced reset must preserve Common trail fading"));
+        context.clickScreenButton("screen.xporbtrails.common");
+        context.clickScreenButton("screen.xporbtrails.reset");
+        context.runOnClient(client -> check(XpOrbTrailsClient.CONFIG.pickupFadeSeconds == new TrailConfig().pickupFadeSeconds,
+                "Common reset must restore trail disappearance fading"));
+        context.takeScreenshot("menu-common-fade");
         context.runOnClient(client -> {
             XpOrbTrailsClient.CONFIG.savedProfiles.add(new TrailConfig.SavedProfile("Regression", new TrailConfig()));
             XpOrbTrailsClient.CONFIG.width = 0.33;

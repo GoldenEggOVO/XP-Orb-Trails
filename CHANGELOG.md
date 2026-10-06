@@ -2,6 +2,7 @@
 
 ## Unreleased — 1.2.0 for Minecraft 26.3
 
+- Move trail disappearance fading to Common trail settings and clarify its label.
 - Repair non-finite numeric values in configuration files and saved profiles before saving.
 - Show a ribbon or polygon diagram for the selected cross-section in the preview.
 - Match preview pickup flash timing to the configured in-game duration.
