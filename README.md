@@ -60,6 +60,8 @@ Built-in appearance presets preserve the enabled state, render range, and trail 
 Saved custom profiles restore the complete configuration. Saved color pairs can be
 renamed, overwritten with the current colors, or deleted, including when all 12 slots
 are full. The preview's replay button starts the pickup flash immediately.
+The 2D preview includes a cross-section diagram and uses the configured pickup
+flash duration. Check the trail's full 3D appearance in-game.
 
 **Effect Strength** replaces the separate opacity and glow-strength sliders.
 Flash size is independent of trail width. Existing configuration files and saved
@@ -68,6 +70,8 @@ profiles migrate automatically while preserving their previous strength and flas
 If the configuration file is unreadable, the mod attempts to preserve it as
 `xp-orb-trails.json.broken` (or a numbered variant), restores defaults, and
 continues loading.
+Non-finite numeric values in settings and saved profiles are repaired before
+saving, while other settings and profile names are retained.
 
 ## Building from source
 

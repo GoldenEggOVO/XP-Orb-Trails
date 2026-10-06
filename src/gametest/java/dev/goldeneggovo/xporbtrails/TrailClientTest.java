@@ -52,10 +52,23 @@ public final class TrailClientTest implements FabricClientGameTest {
         });
         context.clickScreenButton("screen.xporbtrails.open_preview");
         context.waitForScreen(TrailPreviewScreen.class);
+        for (int sides : new int[]{2, 3, 8, 32}) {
+            context.runOnClient(client -> {
+                XpOrbTrailsClient.CONFIG.crossSectionSides = sides;
+                try {
+                    var start = TrailPreviewScreen.class.getDeclaredField("demoStartNanos");
+                    start.setAccessible(true); start.setLong(client.gui.screen(), System.nanoTime() - 2_000_000_000L);
+                } catch (ReflectiveOperationException exception) { throw new AssertionError(exception); }
+            });
+            context.waitTicks(2);
+            context.takeScreenshot("preview-cross-section-" + sides);
+        }
+        context.runOnClient(client -> XpOrbTrailsClient.CONFIG.crossSectionSides = 2);
         context.clickScreenButton("screen.xporbtrails.replay_pickup");
         context.runOnClient(client -> {
             double elapsed = (System.nanoTime() - (long) field(client.gui.screen(), "demoStartNanos")) / 1_000_000_000.0;
             check(elapsed >= 4.0 && elapsed < 4.5, "Replay pickup must jump immediately to the flash phase");
+            verifyPreviewAccuracy();
         });
         context.takeScreenshot("preview-replay-pickup");
         context.runOnClient(client -> client.gui.screen().onClose());
@@ -385,6 +398,37 @@ public final class TrailClientTest implements FabricClientGameTest {
             return java.nio.file.Files.getLastModifiedTime(net.fabricmc.loader.api.FabricLoader.getInstance()
                     .getConfigDir().resolve("xp-orb-trails.json"));
         } catch (java.io.IOException exception) { throw new AssertionError(exception); }
+    }
+
+    private void verifyPreviewAccuracy() {
+        try {
+            var progress = TrailPreviewScreen.class.getDeclaredMethod("pickupProgress", double.class, double.class);
+            progress.setAccessible(true);
+            for (double duration : new double[]{0.08, 0.22, 1.0}) {
+                double halfway = (double) progress.invoke(null, 4.0 + duration / 2, duration);
+                double finished = (double) progress.invoke(null, 4.0 + duration, duration);
+                check(Math.abs(halfway - 0.5) < 1e-9 && Math.abs(finished - 1) < 1e-9,
+                        "Preview flash duration must match the configured in-game seconds");
+            }
+        } catch (ReflectiveOperationException exception) {
+            check(false, "Preview flash timing must expose the same duration used in-game");
+        }
+        try {
+            var vertices = TrailPreviewScreen.class.getDeclaredMethod("crossSectionVertices", int.class, double.class);
+            vertices.setAccessible(true);
+            for (int sides : new int[]{2, 3, 8, 32}) {
+                double[] polygon = (double[]) vertices.invoke(null, sides, 12.0);
+                check(polygon.length == (sides == 2 ? 8 : sides * 2), "Preview must draw the selected cross-section geometry");
+                double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
+                for (int i = 1; i < polygon.length; i += 2) {
+                    minY = Math.min(minY, polygon[i]); maxY = Math.max(maxY, polygon[i]);
+                }
+                check(sides == 2 ? maxY - minY <= 3 : maxY - minY > 12,
+                        "Preview must distinguish a flat ribbon from a polygonal tube");
+            }
+        } catch (ReflectiveOperationException exception) {
+            check(false, "Preview must render a cross-section diagram instead of changing only its label");
+        }
     }
 
     private void verifyCrossSectionGeometry() {

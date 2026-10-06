@@ -41,6 +41,30 @@ public final class TrailConfig {
     public boolean additiveGlow = true;
 
     public TrailConfig sanitized() {
+        TrailConfig defaults = new TrailConfig();
+        renderRange = finite(renderRange, defaults.renderRange);
+        lifetimeSeconds = finite(lifetimeSeconds, defaults.lifetimeSeconds);
+        width = finite(width, defaults.width);
+        opacity = finite(opacity, defaults.opacity);
+        effectStrength = finite(effectStrength, defaults.effectStrength);
+        pointSpacing = finite(pointSpacing, defaults.pointSpacing);
+        groundOffset = finite(groundOffset, defaults.groundOffset);
+        lift = finite(lift, defaults.lift);
+        groundHug = finite(groundHug, defaults.groundHug);
+        maxOrbHeight = finite(maxOrbHeight, defaults.maxOrbHeight);
+        orbYOffset = finite(orbYOffset, defaults.orbYOffset);
+        motionShift = finite(motionShift, defaults.motionShift);
+        cameraPush = finite(cameraPush, defaults.cameraPush);
+        smoothFlow = finite(smoothFlow, defaults.smoothFlow);
+        pickupFadeSeconds = finite(pickupFadeSeconds, defaults.pickupFadeSeconds);
+        rainbowSpeed = finite(rainbowSpeed, defaults.rainbowSpeed);
+        glowStrength = finite(glowStrength, defaults.glowStrength);
+        tailWidthScale = finite(tailWidthScale, defaults.tailWidthScale);
+        middleWidthScale = finite(middleWidthScale, defaults.middleWidthScale);
+        headWidthScale = finite(headWidthScale, defaults.headWidthScale);
+        pickupFlashStrength = finite(pickupFlashStrength, defaults.pickupFlashStrength);
+        pickupFlashSeconds = finite(pickupFlashSeconds, defaults.pickupFlashSeconds);
+        pickupFlashSize = finite(pickupFlashSize, defaults.pickupFlashSize);
         if (configVersion < 2) {
             motionShift = 0.10;
             cameraPush = 0.10;
@@ -115,8 +139,12 @@ public final class TrailConfig {
         if (savedProfiles == null) savedProfiles = new ArrayList<>();
         savedProfiles.removeIf(p -> p == null || p.name == null || p.name.isBlank());
         if (savedProfiles.size() > 8) savedProfiles = new ArrayList<>(savedProfiles.subList(0, 8));
-        for (SavedProfile profile : savedProfiles) profile.migrate();
+        for (SavedProfile profile : savedProfiles) profile.sanitize();
         return this;
+    }
+
+    private static double finite(double value, double fallback) {
+        return Double.isFinite(value) ? value : fallback;
     }
 
     public void copyFrom(TrailConfig other) {
@@ -231,6 +259,12 @@ public final class TrailConfig {
             c.pickupFlashStrength = pickupFlashStrength; c.pickupFlashSeconds = pickupFlashSeconds; c.pickupFlashSize = pickupFlashSize;
             c.colorMode = colorMode; c.pickupFlashStyle = pickupFlashStyle;
             c.sanitized();
+        }
+
+        private void sanitize() {
+            TrailConfig clean = new TrailConfig();
+            applyTo(clean);
+            capture(clean);
         }
 
         private void migrate() {
