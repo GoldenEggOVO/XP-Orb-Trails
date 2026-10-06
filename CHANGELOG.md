@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 1.2.0 for Minecraft 26.3
+## 1.2.0 — Minecraft 26.3
 
 - Group overall effects under Common and all pickup flash controls under Appearance, with matching page resets.
 - Clarify the Motion and Position section and Profiles tab labels.
