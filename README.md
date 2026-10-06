@@ -56,6 +56,11 @@ controls expand only when needed. Wide windows show a live preview beside the se
 Each editable settings page has its own reset button, and hovering over a control
 shows a short description.
 
+Built-in appearance presets preserve the enabled state, render range, and trail limit.
+Saved custom profiles restore the complete configuration. Saved color pairs can be
+renamed, overwritten with the current colors, or deleted, including when all 12 slots
+are full. The preview's replay button starts the pickup flash immediately.
+
 **Effect Strength** replaces the separate opacity and glow-strength sliders.
 Flash size is independent of trail width. Existing configuration files and saved
 profiles migrate automatically while preserving their previous strength and flash size.
@@ -75,7 +80,7 @@ Use Java 25 and the included Gradle wrapper:
 On Windows, run `./gradlew.bat build` instead. The build runs the configuration
 tests and checks that the release JAR contains the settings UI, Mod Menu
 integration, and translations. Install
-`build/libs/xp-orb-trails-1.0.3+mc26.2.jar`; the `-sources.jar` file is for source
+`build/libs/xp-orb-trails-fabric-1.2.0+26.2.jar`; the `-sources.jar` file is for source
 inspection.
 
 ## Minecraft versions and branches

@@ -131,7 +131,7 @@
   "screen.xporbtrails.cross_section.flat": "2 — Camera-facing",
   "screen.xporbtrails.cross_section.round": "Round (32 sides)",
   "screen.xporbtrails.cross_section.sides": "%s sides",
-  "screen.xporbtrails.saved_colors.tip": "Expand to manage saved color pairs. Delete a pair to free a slot when all 12 slots are full.",
+  "screen.xporbtrails.saved_colors.tip": "Rename, overwrite, or delete saved color pairs. Up to 12 pairs can be saved.",
   "screen.xporbtrails.delete_color": "Delete",
   "screen.xporbtrails.confirm_delete_color": "Click Again to Delete",
   "screen.xporbtrails.profile.tip": "Choose a complete look, then adjust individual settings.",
@@ -139,5 +139,10 @@
   "screen.xporbtrails.profile_name.tip": "Enter a name, then press Rename.",
   "screen.xporbtrails.start_color.tip": "Choose the solid color or the tail end of the gradient.",
   "screen.xporbtrails.end_color.tip": "Choose the gradient color nearest the orb.",
-  "screen.xporbtrails.manage_profile": "Manage"
+  "screen.xporbtrails.manage_profile": "Manage",
+  "screen.xporbtrails.manage_color": "Manage",
+  "screen.xporbtrails.color_name": "Color Preset Name",
+  "screen.xporbtrails.color_name.tip": "Enter a name, then press Rename.",
+  "screen.xporbtrails.rename_color": "Rename",
+  "screen.xporbtrails.overwrite_color": "Overwrite with Current Colors"
 }

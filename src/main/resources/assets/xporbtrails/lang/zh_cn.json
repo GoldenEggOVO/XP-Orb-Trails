@@ -131,7 +131,7 @@
   "screen.xporbtrails.cross_section.flat": "2 边（朝向镜头）",
   "screen.xporbtrails.cross_section.round": "圆形（32 边）",
   "screen.xporbtrails.cross_section.sides": "%s 边",
-  "screen.xporbtrails.saved_colors.tip": "展开管理已保存的配色。最多保留 12 组，删除后可继续保存。",
+  "screen.xporbtrails.saved_colors.tip": "重命名、覆盖或删除已保存的配色。最多保留 12 组。",
   "screen.xporbtrails.delete_color": "删除",
   "screen.xporbtrails.confirm_delete_color": "再次点击确认删除",
   "screen.xporbtrails.profile.tip": "选择完整效果方案，再按需微调。",
@@ -139,5 +139,10 @@
   "screen.xporbtrails.profile_name.tip": "输入名称后点击重命名。",
   "screen.xporbtrails.start_color.tip": "选择单色模式颜色，或渐变的尾端颜色。",
   "screen.xporbtrails.end_color.tip": "选择靠近经验球一端的渐变颜色。",
-  "screen.xporbtrails.manage_profile": "管理"
+  "screen.xporbtrails.manage_profile": "管理",
+  "screen.xporbtrails.manage_color": "管理",
+  "screen.xporbtrails.color_name": "配色名称",
+  "screen.xporbtrails.color_name.tip": "输入名称后点击重命名。",
+  "screen.xporbtrails.rename_color": "重命名",
+  "screen.xporbtrails.overwrite_color": "用当前配色覆盖"
 }

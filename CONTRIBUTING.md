@@ -60,14 +60,20 @@ Compilation and unit tests do not replace these client checks.
 1. Update the mod version, Minecraft dependencies, README, and changelog on the
    matching Minecraft branch.
 2. Run a clean build, inspect the packaged metadata, and complete client checks.
-3. Commit and push the verified source, then tag that commit as `v<mod-version>`.
-   Add `+mc<minecraft-version>` only when the same mod version is released
-   separately for multiple Minecraft versions.
-4. Publish a GitHub Release titled `v<mod-version> for <minecraft-version>` with
-   concise English change notes and the installable JAR. Keep the Minecraft
-   version in its filename, for example `xp-orb-trails-1.0.3+mc26.2.jar`.
+3. Commit and push the verified source, then tag that commit as
+   `fabric-<mod-version>+<minecraft-version>`.
+4. Publish a GitHub Release titled `fabric-<mod-version>+<minecraft-version>` with
+   concise English change notes and the installable JAR, for example
+   `xp-orb-trails-fabric-1.2.0+26.2.jar`. Publish a new release for each update;
+   preserve existing releases unless replacement is explicitly requested.
 5. Download the published JAR and compare its SHA-256 with the local build.
 
 Use Git and GitHub CLI for publishing. There are no GitHub Actions workflows.
 Keep build outputs, runtime files, credentials, and local verification reports
 out of source control.
+
+Fabric metadata uses the semantic version `1.2.0+mc26.2`; the loader prefix is
+reserved for release titles, tags, and filenames. Both Minecraft branches may
+share the mod version when they contain the same changes. On Modrinth, also set
+the correct game version and loader and upload the verified JAR; filenames alone
+do not determine update detection.

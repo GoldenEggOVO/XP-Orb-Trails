@@ -17,7 +17,7 @@ public final class TrailPreviewScreen extends Screen {
     @Override
     protected void init() {
         int footerY = height - 28;
-        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.replay_pickup"), b -> demoStartNanos = System.nanoTime())
+        addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.replay_pickup"), b -> demoStartNanos = System.nanoTime() - 4_000_000_000L)
                 .bounds(width / 2 - 154, footerY, 150, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.back_to_settings"), b -> onClose())
                 .bounds(width / 2 + 4, footerY, 150, 20).build());
