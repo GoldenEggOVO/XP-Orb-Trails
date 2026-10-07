@@ -45,25 +45,47 @@ Forge 26.2 的官方 MDK 使用 Gradle 9.5.0，26.3 使用 9.7.1；两者要求 
 
 ## 目录与构建
 
+结构参考 [Simple Voice Chat 的 26.3 分支](https://github.com/henkelmax/simple-voice-chat/tree/26.3)。
+核对的参考提交为 `f8d8146e59630e9f70dc82e20eb2f81285353b39`。
+其根 `settings.gradle` 注册不同加载器模块；`fabric`、`forge`、`neoforge` 分别有自己的构建文件、依赖和模组入口，并复用 `api`、`common`、`common-client`。
+XP Orb Trails 采用相同的加载器分目录原则，只保留本项目需要的四个模块。
+
 继续按 Minecraft 版本维护 `26.2`、`26.3` 两个分支，不新增长期维护的加载器分支。
 每个分支整理为：
 
 ```text
-common/src/main/java/       共用设置、持久化、菜单、预览、尾迹与闪光计算
-common/src/main/resources/  共用语言、图标和客户端 Mixin 配置
-common/src/test/java/       共用配置与几何回归测试
-fabric/src/main/           Fabric 入口、事件与 Mod Menu 接入、元数据
-fabric/src/gametest/       现有 Fabric 客户端回归
-forge/src/main/            Forge 入口、事件、设置界面接入、元数据
-neoforge/src/main/         NeoForge 入口、事件、设置界面接入、元数据
-gradle/wrapper/            构建入口
+common/
+  build.gradle             共用模块的编译与测试
+  src/main/java/           共用设置、持久化、菜单、预览、尾迹与闪光计算
+  src/main/resources/      共用语言、图标和客户端 Mixin 配置
+  src/test/java/           共用配置与几何回归测试
+fabric/
+  build.gradle             Fabric 构建与打包
+  gradle.properties        Fabric 专属依赖版本
+  src/main/                Fabric 入口、事件与 Mod Menu 接入、元数据
+  src/gametest/            现有 Fabric 客户端回归
+forge/
+  build.gradle             Forge 构建与打包
+  gradle.properties        Forge 专属依赖版本
+  src/main/                Forge 入口、事件、设置界面接入、元数据
+neoforge/
+  build.gradle             NeoForge 构建与打包
+  gradle.properties        NeoForge 专属依赖版本
+  src/main/                NeoForge 入口、事件、设置界面接入、元数据
+build.gradle               根构建、共用任务与产物检查
+settings.gradle            注册 common、fabric、forge、neoforge
+gradle.properties          Minecraft、模组和 Java 的共用版本信息
+gradle/wrapper/            共用构建入口
 ```
 
-`common` 是共用源码目录，不作为单独的运行时模组发布。
-三个加载器模块各自编译并打包共用源码与资源，避免将依赖某一加载器的公共二进制复制到其他平台。
-根项目负责组织三个加载器模块的构建、测试及产物检查。
+`common` 是独立 Gradle 共用模块，不作为单独的运行时模组发布。
+`fabric`、`forge`、`neoforge` 各自保留独立构建文件、元数据、初始化和事件接入。
+三个加载器模块各自编译并打包共用源码与资源，避免将依赖某一加载器的公共二进制复制到其他平台；共用模块的输出不含加载器专属入口。
+根项目统一组织构建、测试及产物检查，也能通过 `:fabric:build`、`:forge:build`、`:neoforge:build` 分别构建。
+共用构建配置保存在本仓库，只引入本项目所需的插件和依赖。
 
-以 Java 25、Gradle 9.7.1 为统一构建目标，保留现有 Fabric 依赖版本。
+以 Java 25 和本项目现有 Gradle 9.6.0 为首轮构建基线，保留现有 Fabric 依赖版本。
+参考仓库的根 Wrapper 使用 9.5.1；官方 MDK 使用的 Wrapper 版本不能直接视为最低版本要求。
 先验证 Fabric Loom、ForgeGradle 和 NeoForge 构建插件能共同配置和运行，再迁移源码。
 如果工具兼容性检查失败，记录实际错误并修订构建方案，不提交无法构建的目录迁移。
 
