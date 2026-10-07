@@ -1,79 +1,87 @@
 # Contributing
 
-XP Orb Trails is a client-only Fabric mod. Choose the branch matching the
-Minecraft version you are working on: `26.3` for current development or `26.2`
-for maintenance of that release. Keep version-specific changes on that branch.
-
-Apply shared bug fixes and optimizations to both maintained branches, `26.2`
-and `26.3`. Adapt Minecraft-specific APIs separately and run each branch's build
-and client regressions before calling the shared change complete.
+XP Orb Trails supports Fabric, Forge, and NeoForge on the client only.
+Choose the Minecraft branch matching your target: `26.3` or `26.2`.
+Apply shared fixes to both branches, adapt Minecraft APIs separately, and
+verify each loader before calling a shared change complete.
 
 ## Source layout
 
 ```text
-src/client/java/dev/goldeneggovo/xporbtrails/
-  TrailRenderer.java       Trail geometry and rendering
-  TrailConfig.java         Settings, profiles, and defaults
-  *Screen.java             Configuration, color picker, and preview screens
-  XpOrbTrailsClient.java   Client initialization and configuration persistence
-  ModMenuIntegration.java Mod Menu configuration entry point
-  mixin/                  Minecraft hooks
-src/client/resources/     Client mixin configuration
-src/main/resources/       Mod metadata, icon, and language JSON files
-src/test/java/            Configuration regression tests
-src/gametest/             Optional Minecraft client regression tests
-gradle/wrapper/           Reproducible Gradle wrapper
+common/src/main/java/       Shared settings, menus, geometry, rendering, and mixins
+common/src/main/resources/  Shared mixin configuration, icon, and language files
+common/src/test/            Configuration and persistence regression tests
+common/src/clientTest/      Packaged client probe shared by Forge and NeoForge
+fabric/src/main/           Fabric entry point, Mod Menu integration, metadata
+fabric/src/gametest/       Fabric client regressions
+forge/src/main/            Forge entry point, render hooks, metadata
+forge/src/clientTest/      Forge test entry point and metadata
+neoforge/src/main/         NeoForge entry point and metadata
+neoforge/src/clientTest/   NeoForge test entry point and metadata
+gradle/wrapper/            Reproducible Gradle wrapper
 ```
 
-Runtime code stays in the client source set. User-facing text uses Minecraft
-translation keys; add matching entries to `en_us.json` and `zh_cn.json`.
+Each loader compiles the common sources against its Minecraft environment.
+Common runtime code must not import loader-specific APIs. Platform entry points
+supply the configuration directory, events, key binding, and settings-screen
+factory. User-facing text uses matching keys in `en_us.json` and `zh_cn.json`.
+The 26.2 and 26.3 render backends retain their own Minecraft API types.
 
 ## Build and validation
 
-Use JDK 25 and the checked-in wrapper:
+Use JDK 25 and the checked-in wrapper (`gradlew.bat` on Windows):
 
 ```sh
-./gradlew clean build
+./gradlew build
+./gradlew -Ploaders=fabric build
+./gradlew -Ploaders=forge build
+./gradlew -Ploaders=neoforge build
 ```
 
-On Windows, use `./gradlew.bat clean build`. The build runs JUnit tests and
-`verifyReleaseJar`, which checks that the settings UI, Mod Menu integration,
-mixins, and translations are packaged. Test reports are in
-`build/reports/tests/test/`; installable JARs are in `build/libs/`.
+The default build includes all loaders. Each platform's `verifyReleaseJar`
+checks shared classes, mixins, translations, license, expanded metadata,
+platform entry points, and exclusion of test classes and other loaders.
+JUnit results are in `common/build/reports/tests/test/`; installable JARs are
+in `<loader>/build/libs/`. Do not install source or client-test JARs.
+Forge's launcher may provision an additional Java toolchain; the mod and
+Minecraft use Java 25.
 
-Run the client regressions with `./gradlew -PclientTests runClientGameTest`
-(use `gradlew.bat` on Windows). This launches a test client and temporary world
-to check trail limits, range filtering, toggle and disconnect cleanup, small
-color-picker layouts, pickup resets, and both rendering modes. A graphical
-environment is required. The test mod is not included in the release JAR.
-Menu checks cover preset selection, conditional controls, profile management,
-keyboard scrolling, and narrow/wide layouts. Unit tests also verify legacy
-configuration and profile migration.
+Run the graphical client checks separately:
 
-Before releasing, start a compatible Fabric client and check settings from
-both Mod Menu and the key binding, English and Chinese translations, the
-preview screen, moving orb trails, pickup flashes, and configuration persistence.
-Compilation and unit tests do not replace these client checks.
+```sh
+./gradlew -Ploaders=fabric -PclientTests :fabric:runClientGameTest
+./gradlew -Ploaders=forge -PclientTests :forge:runClientTestClient
+./gradlew -Ploaders=neoforge -PclientTests :neoforge:runClientProbe
+```
+
+Forge/NeoForge probes load the packaged mod JAR. Prepare a disposable world at
+`<loader>/build/run/clientProbe/saves/Probe World`, disable `pauseOnLostFocus`
+in that run's options, and seed `config/xp-orb-trails.json` with width `0.42`
+and a saved color named `Existing`. The initial probe checks loader settings
+factories, the key binding, English/Chinese menus, page resets, real pickup
+packets, disappearance without pickup, cleanup, and rendered trail pixels
+for 2/3/8/32 sides in both blend modes. It saves a color and profile before exit.
+Run again with `-PprobeRestart` to verify persisted settings. Inspect
+`probe-result.json` and `probe-restart.json`: a successful process exit alone
+does not prove the probe passed. Test code is excluded from installable JARs.
+
+Fabric checks additionally cover color/profile management, keyboard scrolling,
+small and wide layouts, trail limits, and geometry fingerprints. Screenshots
+and automation do not replace human in-game acceptance of appearance and feel.
+Use a separate Minecraft instance for testing; keep player data out of Git.
 
 ## Releases
 
-1. Update the mod version, Minecraft dependencies, README, and changelog on the
-   matching Minecraft branch.
-2. Run a clean build, inspect the packaged metadata, and complete client checks.
-3. Commit and push the verified source, then tag that commit as
-   `fabric-<mod-version>+<minecraft-version>`.
-4. Publish a GitHub Release titled `fabric-<mod-version>+<minecraft-version>` with
-   concise English change notes and the installable JAR, for example
-   `xp-orb-trails-fabric-1.2.0+26.2.jar`. Publish a new release for each update;
-   preserve existing releases unless replacement is explicitly requested.
-5. Download the published JAR and compare its SHA-256 with the local build.
+1. Update version, dependencies, README, and changelog on the Minecraft branch.
+2. Build all loaders, inspect metadata, and complete client acceptance.
+3. Commit and push verified source only when authorized.
+4. Publish each loader with tag/title `<loader>-<mod-version>+<minecraft-version>`
+   and JAR `xp-orb-trails-<loader>-<mod-version>+<minecraft-version>.jar`.
+   Preserve existing releases unless replacement is explicitly requested.
+5. Download published JARs and compare SHA-256 with local builds.
 
-Use Git and GitHub CLI for publishing. There are no GitHub Actions workflows.
-Keep build outputs, runtime files, credentials, and local verification reports
-out of source control.
-
-Fabric metadata uses the semantic version `1.2.0+mc26.2`; the loader prefix is
-reserved for release titles, tags, and filenames. Both Minecraft branches may
-share the mod version when they contain the same changes. On Modrinth, also set
-the correct game version and loader and upload the verified JAR; filenames alone
-do not determine update detection.
+Metadata uses the semantic version `1.3.0+mc26.2`; the loader prefix belongs
+in release names, tags, and filenames. Both Minecraft branches may share a
+mod version. On Modrinth, select the correct game version and loader as well.
+Use Git and GitHub CLI for publishing. This repository has no Actions workflows.
+Keep build output, runtime files, credentials, and local reports out of Git.

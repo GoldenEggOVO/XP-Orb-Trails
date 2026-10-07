@@ -1,7 +1,7 @@
 # XP Orb Trails
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A)](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2)
-[![Fabric](https://img.shields.io/badge/Mod%20loader-Fabric-DBD0B4)](https://fabricmc.net/use/installer/)
+[![Loaders](https://img.shields.io/badge/Loaders-Fabric%20%7C%20Forge%20%7C%20NeoForge-DBD0B4)](#requirements)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [Download](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases) ·
@@ -9,7 +9,8 @@
 [Report an issue](https://github.com/GoldenEggOVO/XP-Orb-Trails/issues) ·
 [Contributing](CONTRIBUTING.md)
 
-XP Orb Trails is a client-only Fabric mod for Minecraft 26.2. It adds smooth,
+XP Orb Trails is a client-only mod for Minecraft 26.2, available for Fabric,
+Forge, and NeoForge. It adds smooth,
 colorful trails to moving experience orbs and an optional pickup flash. Shaders
 and server-side installation are not required.
 
@@ -30,24 +31,34 @@ and server-side installation are not required.
 | Component | Version |
 | --- | --- |
 | Minecraft | 26.2 |
-| Fabric Loader | 0.19.5 or newer |
-| Fabric API | 0.158.0+26.2 or newer for Minecraft 26.2 |
 | Java | 25 or newer |
-| Mod Menu | Optional; adds a Config button |
+
+Choose one loader:
+
+| Loader | Tested version | Additional mods |
+| --- | --- | --- |
+| Fabric | Loader 0.19.5 | Fabric API 0.158.0+26.2; optional Mod Menu 20.0.1 |
+| Forge | 65.1.3 | None |
+| NeoForge | 26.2.0.88 | None |
 
 ## Installation
 
-1. Download `xp-orb-trails-fabric-1.2.0+26.2.jar` from the
-   [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.2.0+26.2).
-2. Put the JAR and a compatible Fabric API JAR in the client `mods` folder.
-3. Start Minecraft with Fabric Loader. The server does not need this mod.
+1. Choose the JAR matching both your loader and Minecraft version:
+   `xp-orb-trails-<loader>-1.3.0+26.2.jar`.
+2. Put that JAR in the client `mods` folder. Fabric also needs Fabric API.
+3. Start Minecraft with the matching loader. The server does not need this mod.
+
+Version 1.3.0 is an unreleased local test build. Published versions remain on the
+[releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases).
+Install only one XP Orb Trails JAR per instance.
 
 The mod follows Minecraft's selected language. English is used when a
 translation is unavailable; English and Simplified Chinese are included.
 
 ## Configuration
 
-Open the settings screen through Mod Menu's Config button or bind
+Open the settings screen through Mod Menu's Config button (Fabric), the loader's
+Mods configuration button (Forge/NeoForge), or bind
 **Open Trail Settings** in Minecraft's Controls screen. Changes apply
 immediately and are saved to `config/xp-orb-trails.json` when the screen closes.
 Settings are grouped into **Common**, **Appearance**, **Advanced**, and **Profiles**.
@@ -85,10 +96,13 @@ Use Java 25 and the included Gradle wrapper:
 ```
 
 On Windows, run `./gradlew.bat build` instead. The build runs the configuration
-tests and checks that the release JAR contains the settings UI, Mod Menu
-integration, and translations. Install
-`build/libs/xp-orb-trails-fabric-1.2.0+26.2.jar`; the `-sources.jar` file is for source
-inspection.
+tests and checks all three loader JARs for settings UI, mixins, translations,
+and platform metadata. Install the matching JAR from `<loader>/build/libs/`;
+the `-sources.jar` file is for source inspection.
+
+To build one loader, run `./gradlew -Ploaders=fabric build` (or `forge` or
+`neoforge`). Shared code is in `common/`; loader entry points and build settings
+are in `fabric/`, `forge/`, and `neoforge/`.
 
 ## Minecraft versions and branches
 
