@@ -1,14 +1,12 @@
 # Changelog
 
-## 1.3.0 — Minecraft 26.2 (Unreleased)
+## 1.3.0 — Minecraft 26.2
 
 - Add Forge and NeoForge client support alongside Fabric.
 - Open trail settings from the Forge and NeoForge Mods screens or the existing key binding.
 - Share configuration, menus, translations, and trail logic across loader modules.
 - Preserve existing settings, saved colors, and profiles when changing loaders.
 - Keep camera transforms active when drawing trails on Forge and NeoForge.
-
-These are local test builds pending in-game acceptance.
 
 ## 1.2.0 — Minecraft 26.2
 

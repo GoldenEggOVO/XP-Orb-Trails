@@ -48,7 +48,7 @@ Choose one loader:
 2. Put that JAR in the client `mods` folder. Fabric also needs Fabric API.
 3. Start Minecraft with the matching loader. The server does not need this mod.
 
-Version 1.3.0 is an unreleased local test build. Published versions remain on the
+Download version 1.3.0 from the
 [releases page](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases).
 Install only one XP Orb Trails JAR per instance.
 
@@ -109,10 +109,10 @@ are in `fabric/`, `forge/`, and `neoforge/`.
 Each supported Minecraft version has its own branch and release. Use the JAR
 matching your Minecraft version.
 
-| Minecraft | Source branch | Release |
-| --- | --- | --- |
-| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [`fabric-1.2.0+26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.2.0+26.3) |
-| 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [`fabric-1.2.0+26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.2.0+26.2) |
+| Minecraft | Source branch | Fabric | Forge | NeoForge |
+| --- | --- | --- | --- | --- |
+| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.3.0+26.3) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.3.0+26.3) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.3.0+26.3) |
+| 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.3.0+26.2) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.3.0+26.2) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.3.0+26.2) |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout, validation, and
 release process. This repository does not use GitHub Actions workflows;
