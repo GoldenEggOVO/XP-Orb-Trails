@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+issueTrackerURL="https://github.com/GoldenEggOVO/XP-Orb-Trails/issues"
+
+[[mods]]
+modId="xporbtrails"
+version="${version}"
+displayName="XP Orb Trails"
+authors="GoldenEggOVO"
+displayURL="https://github.com/GoldenEggOVO/XP-Orb-Trails"
+iconFile="assets/xporbtrails/icon.png"
+description='''Adds smooth, colorful, customizable trails and pickup flashes to experience orbs without shaders.'''
+
+[[mixins]]
+config="xporbtrails.client.mixins.json"
+
+[[dependencies.xporbtrails]]
+modId="neoforge"
+type="required"
+versionRange="[26.3.0.52-beta,26.4)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.xporbtrails]]
+modId="minecraft"
+type="required"
+versionRange="[26.3,26.4)"
+ordering="NONE"
+side="CLIENT"

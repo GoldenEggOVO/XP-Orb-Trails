@@ -1,0 +1,7 @@
+modLoader="javafml"
+loaderVersion="[66,)"
+license="MIT"
+clientSideOnly=true
+[[mods]]
+modId="xporbtrails_client_test"
+version="1.0.0"

@@ -6,6 +6,7 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+plugins { id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0' }
 rootProject.name = 'xp-orb-trails'
 include 'common'
 providers.gradleProperty('loaders').orElse('fabric,forge,neoforge').get().split(',').each { loader ->

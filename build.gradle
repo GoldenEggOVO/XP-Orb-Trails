@@ -37,21 +37,26 @@ configure(subprojects.findAll { it.name != 'common' }) {
     tasks.register('verifyReleaseJar') {
         dependsOn tasks.named('jar')
         doLast {
-            def artifact = tasks.named('jar').get().archiveFile.get().asFile
+            def artifact = project.hasProperty('verifyJarPath') ? file(project.property('verifyJarPath')) : tasks.named('jar').get().archiveFile.get().asFile
             def required = [
                 'dev/goldeneggovo/xporbtrails/XpOrbTrailsClient.class',
                 'dev/goldeneggovo/xporbtrails/TrailRenderer.class',
                 'dev/goldeneggovo/xporbtrails/TrailConfigScreen.class',
                 'dev/goldeneggovo/xporbtrails/mixin/ClientPacketListenerMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/ExperienceOrbMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/GameRendererMixin.class',
                 'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
-                'xporbtrails.client.mixins.json', 'LICENSE_xp-orb-trails',
+                'xporbtrails.client.mixins.json', 'pack.mcmeta', 'LICENSE_xp-orb-trails',
+                'assets/xporbtrails/icon.png',
                 'assets/xporbtrails/lang/en_us.json', 'assets/xporbtrails/lang/zh_cn.json'
             ]
             if (project.name == 'fabric') required += ['fabric.mod.json',
                 'dev/goldeneggovo/xporbtrails/FabricXpOrbTrailsClient.class',
                 'dev/goldeneggovo/xporbtrails/ModMenuIntegration.class']
             if (project.name == 'forge') required += ['META-INF/mods.toml',
-                'dev/goldeneggovo/xporbtrails/ForgeXpOrbTrails.class']
+                'dev/goldeneggovo/xporbtrails/ForgeXpOrbTrails.class', 'xporbtrails.forge.mixins.json',
+                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelExtractorMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelRendererMixin.class']
             if (project.name == 'neoforge') required += ['META-INF/neoforge.mods.toml',
                 'dev/goldeneggovo/xporbtrails/NeoForgeXpOrbTrails.class']
             new java.util.zip.ZipFile(artifact).withCloseable { zip ->
@@ -61,7 +66,17 @@ configure(subprojects.findAll { it.name != 'common' }) {
                 ['fabric.mod.json': 'fabric', 'META-INF/mods.toml': 'forge', 'META-INF/neoforge.mods.toml': 'neoforge'].each { entry, platform ->
                     if (project.name != platform && zip.getEntry(entry) != null) throw new GradleException("Unexpected ${platform} metadata in ${artifact}")
                 }
-                if (zip.entries().any { it.name.contains('TrailClientTest') }) throw new GradleException("Test classes found in ${artifact}")
+                ['FabricXpOrbTrailsClient': 'fabric', 'ModMenuIntegration': 'fabric', 'ForgeXpOrbTrails': 'forge', 'NeoForgeXpOrbTrails': 'neoforge'].each { entry, platform ->
+                    if (project.name != platform && zip.getEntry("dev/goldeneggovo/xporbtrails/${entry}.class") != null) throw new GradleException("Unexpected ${platform} entry point in ${artifact}")
+                }
+                if (zip.entries().any { it.name.contains('TrailClientTest') || it.name.contains('/xporbtrails/test/') }) throw new GradleException("Test classes found in ${artifact}")
+                def metadataPath = ['fabric': 'fabric.mod.json', 'forge': 'META-INF/mods.toml', 'neoforge': 'META-INF/neoforge.mods.toml'][project.name]
+                def metadata = zip.getInputStream(zip.getEntry(metadataPath)).getText('UTF-8')
+                if (metadata.contains('${') || !metadata.contains("${project.version}+mc${rootProject.minecraft_version}")) throw new GradleException("Incorrect release metadata in ${artifact}")
+                if (project.name == 'forge') {
+                    def manifest = new java.util.jar.Manifest(zip.getInputStream(zip.getEntry('META-INF/MANIFEST.MF')))
+                    if (manifest.mainAttributes.getValue('MixinConfigs') != 'xporbtrails.client.mixins.json,xporbtrails.forge.mixins.json') throw new GradleException("Forge mixins are not registered in ${artifact}")
+                }
             }
         }
     }

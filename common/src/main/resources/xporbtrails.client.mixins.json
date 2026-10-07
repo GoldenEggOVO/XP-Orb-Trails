@@ -1,7 +1,8 @@
 {
 	"required": true,
+	"minVersion": "0.8",
 	"package": "dev.goldeneggovo.xporbtrails.mixin",
-	"compatibilityLevel": "JAVA_25",
+	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"ClientPacketListenerMixin",
 		"ExperienceOrbMixin",
