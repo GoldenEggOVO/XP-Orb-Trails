@@ -19,6 +19,17 @@ public final class TrailClientTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        if (Boolean.getBoolean("xporb.probeRestart")) {
+            context.runOnClient(client -> {
+                check(XpOrbTrailsClient.CONFIG.width == 0.37, "Trail width must survive a client restart");
+                check(XpOrbTrailsClient.CONFIG.savedPresets.stream().anyMatch(p -> p.name.equals("Probe Color")),
+                        "Saved colors must survive a client restart");
+                check(XpOrbTrailsClient.CONFIG.savedProfiles.stream().anyMatch(p -> p.name.equals("Probe Profile")),
+                        "Saved profiles must survive a client restart");
+            });
+            if (!failures.isEmpty()) throw new AssertionError(String.join("; ", failures));
+            return;
+        }
         context.runOnClient(client -> {
             XpOrbTrailsClient.CONFIG = new TrailConfig();
             XpOrbTrailsClient.CONFIG.pickupFlashStyle = "ring";
@@ -410,6 +421,10 @@ public final class TrailClientTest implements FabricClientGameTest {
             check(trails().isEmpty() && snapshot().isEmpty() && field(null, "lastLevel") == null,
                     "Disconnect must release the world and all trail state");
             XpOrbTrailsClient.CONFIG = new TrailConfig();
+            XpOrbTrailsClient.CONFIG.width = 0.37;
+            XpOrbTrailsClient.CONFIG.savedPresets.add(new TrailConfig.SavedPreset("Probe Color", 0x123456, 0xabcdef));
+            XpOrbTrailsClient.CONFIG.savedProfiles.add(new TrailConfig.SavedProfile("Probe Profile", XpOrbTrailsClient.CONFIG));
+            XpOrbTrailsClient.saveConfig();
         });
         if (!failures.isEmpty()) throw new AssertionError(String.join("; ", failures));
     }
