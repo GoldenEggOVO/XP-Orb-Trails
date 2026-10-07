@@ -1,0 +1,8 @@
+plugins { id 'net.fabricmc.fabric-loom' }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    implementation 'net.fabricmc:fabric-loader:0.19.5'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
+}

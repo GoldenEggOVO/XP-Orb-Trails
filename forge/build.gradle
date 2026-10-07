@@ -1,0 +1,21 @@
+plugins { id 'net.minecraftforge.gradle' }
+minecraft {
+    runs {
+        configureEach { workingDir = layout.projectDirectory.dir('run') }
+        register('client')
+    }
+}
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+}
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.6'
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('META-INF/mods.toml') { expand version: "${project.version}+mc${rootProject.minecraft_version}" }
+}
+jar { manifest.attributes 'MixinConfigs': 'xporbtrails.client.mixins.json,xporbtrails.forge.mixins.json' }

@@ -17,7 +17,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"dev.goldeneggovo.xporbtrails.XpOrbTrailsClient"
+			"dev.goldeneggovo.xporbtrails.FabricXpOrbTrailsClient"
 		],
 		"modmenu": [
 			"dev.goldeneggovo.xporbtrails.ModMenuIntegration"

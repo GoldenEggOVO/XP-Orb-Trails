@@ -15,8 +15,6 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -138,24 +136,23 @@ public final class TrailRenderer {
         return point;
     }
 
-    public static synchronized void extract(LevelExtractionContext context) {
+    public static synchronized void extract(ClientLevel level, Vec3 camera, float partialTick) {
         long now = System.nanoTime();
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
-        updateWorld(context.level());
+        updateWorld(level);
         if (!cfg.enabled) return;
         trimToCap(cfg.trailCap);
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
-        Vec3 camera = context.camera().position();
+
         double rangeSq = cfg.renderRange * cfg.renderRange;
         List<RenderTrail> snapshot = new ArrayList<>(TRAILS.size());
 
-        float partialTick = Math.max(0.0F, Math.min(1.0F,
-                context.deltaTracker().getGameTimeDeltaPartialTick(true)));
+        partialTick = Math.max(0.0F, Math.min(1.0F, partialTick));
         Iterator<Map.Entry<Integer, Trail>> iterator = TRAILS.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Integer, Trail> entry = iterator.next();
             Trail trail = entry.getValue();
-            ExperienceOrb liveOrb = context.level().getEntity(entry.getKey()) instanceof ExperienceOrb orb
+            ExperienceOrb liveOrb = level.getEntity(entry.getKey()) instanceof ExperienceOrb orb
                     && orb.isAlive() && !orb.isRemoved() ? orb : null;
             Vec3 position = liveOrb != null ? liveOrb.position()
                     : trail.points.isEmpty() ? trail.pickupPosition : trail.points.get(trail.points.size() - 1).position;
@@ -190,7 +187,7 @@ public final class TrailRenderer {
         renderTrails = List.copyOf(snapshot);
     }
 
-    public static void render(LevelRenderContext context) {
+    public static void render(Vec3 camera) {
         if (!XpOrbTrailsClient.CONFIG.enabled) return;
         List<RenderTrail> snapshot = renderTrails;
         if (snapshot.isEmpty()) return;
@@ -203,7 +200,7 @@ public final class TrailRenderer {
         // Vertices are camera-relative, so vanilla's origin-distance sort orders all transparent quads.
         StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, topology, cfg.additiveGlow ? null : VertexSorting.DISTANCE_TO_ORIGIN);
         VertexConsumer vertices = BUFFER.getVertexBuilder(draw);
-        Vec3 camera = context.levelState().cameraRenderState.pos;
+
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
 
         for (RenderTrail trail : snapshot) {

@@ -3,16 +3,7 @@ package dev.goldeneggovo.xporbtrails;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.resources.Identifier;
-import com.mojang.blaze3d.platform.InputConstants;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -24,15 +15,17 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class XpOrbTrailsClient implements ClientModInitializer {
+public final class XpOrbTrailsClient {
     private static final Logger LOGGER = LoggerFactory.getLogger("XP Orb Trails");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static TrailConfig CONFIG = new TrailConfig();
     private static Path configPath;
 
-    @Override
-    public void onInitializeClient() {
-        configPath = FabricLoader.getInstance().getConfigDir().resolve("xp-orb-trails.json");
+    private XpOrbTrailsClient() { }
+
+    public static void initialize(Path configDirectory) {
+        configPath = configDirectory.resolve("xp-orb-trails.json");
+        CONFIG = new TrailConfig();
         if (Files.exists(configPath)) {
             try {
                 try (Reader reader = Files.newBufferedReader(configPath)) {
@@ -50,18 +43,6 @@ public final class XpOrbTrailsClient implements ClientModInitializer {
             saveConfig();
         }
 
-        LevelExtractionEvents.END_EXTRACTION.register(TrailRenderer::extract);
-        // Upload and draw after vanilla has closed its terrain render pass.
-        LevelRenderEvents.END_MAIN.register(TrailRenderer::render);
-
-        KeyMapping.Category category = KeyMapping.Category.register(
-                Identifier.fromNamespaceAndPath("xporbtrails", "settings"));
-        KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.xporbtrails.open_settings", InputConstants.UNKNOWN.getValue(), category));
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            TrailRenderer.updateWorld(client.level);
-            while (openSettings.consumeClick()) client.gui.setScreen(createConfigScreen(client.gui.screen()));
-        });
     }
 
     public static Screen createConfigScreen(Screen parent) {
@@ -69,7 +50,7 @@ public final class XpOrbTrailsClient implements ClientModInitializer {
     }
 
     public static void saveConfig() {
-        if (configPath == null) configPath = FabricLoader.getInstance().getConfigDir().resolve("xp-orb-trails.json");
+        if (configPath == null) throw new IllegalStateException("XP Orb Trails has not been initialized");
         Path temporaryPath = configPath.resolveSibling(configPath.getFileName() + ".tmp");
         try {
             Files.createDirectories(configPath.getParent());
