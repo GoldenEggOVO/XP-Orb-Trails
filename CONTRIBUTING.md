@@ -66,8 +66,13 @@ Run again with `-PprobeRestart` to verify persisted settings. Inspect
 does not prove the probe passed. Test code is excluded from installable JARs.
 
 Fabric checks additionally cover color/profile management, keyboard scrolling,
-small and wide layouts, trail limits, and geometry fingerprints. Screenshots
-and automation do not replace human in-game acceptance of appearance and feel.
+small and wide layouts, trail limits, and geometry fingerprints. The full run
+saves a restart fixture. Run the Fabric
+test again with JVM property `-Dxporb.probeRestart=true` (for example via
+`JAVA_TOOL_OPTIONS`) and `-x :fabric:deleteGameTestRunDir` to check the saved
+width, colors, and profiles at startup. Excluding that cleanup task preserves
+the prior run's configuration and screenshots for this restart check.
+Screenshots and automation do not replace human in-game acceptance of appearance and feel.
 Use a separate Minecraft instance for testing; keep player data out of Git.
 
 ## Releases
