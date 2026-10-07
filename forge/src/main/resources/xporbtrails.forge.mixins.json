@@ -1,0 +1,8 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "dev.goldeneggovo.xporbtrails.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "client": ["ForgeLevelExtractorMixin", "ForgeLevelRendererMixin"],
+    "injectors": {"defaultRequire": 1}
+}

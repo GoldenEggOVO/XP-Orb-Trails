@@ -1,0 +1,34 @@
+plugins { id 'net.neoforged.moddev' }
+neoForge {
+    version = neoforge_version
+    runs {
+        client { client() }
+    }
+    mods { xporbtrails { sourceSet sourceSets.main } }
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('META-INF/neoforge.mods.toml') { expand version: "${project.version}+mc${rootProject.minecraft_version}" }
+}
+if (project.hasProperty('clientTests')) {
+    sourceSets {
+        clientTest {
+            java.srcDir rootProject.file('common/src/clientTest/java')
+        }
+    }
+    neoForge.addModdingDependenciesTo(sourceSets.clientTest)
+    dependencies { clientTestImplementation files(tasks.named('jar')) }
+    neoForge {
+        mods { xporbtrails_client_test { sourceSet sourceSets.clientTest } }
+        runs {
+            clientProbe {
+                client()
+                sourceSet = sourceSets.clientTest
+                loadedMods = [mods.xporbtrails_client_test]
+                gameDirectory = layout.buildDirectory.dir('run/clientProbe')
+                programArguments.addAll('--quickPlaySingleplayer', 'Probe World', '--username', 'ProbePlayer')
+                if (project.hasProperty('probeRestart')) systemProperty 'xporb.probeRestart', 'true'
+            }
+        }
+    }
+}

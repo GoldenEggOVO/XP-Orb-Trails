@@ -1,0 +1,42 @@
+plugins { id 'net.minecraftforge.gradle' }
+minecraft {
+    runs {
+        configureEach { workingDir = layout.projectDirectory.dir('run') }
+        register('client')
+    }
+}
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+}
+def forgeMinecraft = minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+dependencies {
+    implementation forgeMinecraft
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.6'
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('META-INF/mods.toml') { expand version: "${project.version}+mc${rootProject.minecraft_version}" }
+}
+jar { manifest.attributes 'MixinConfigs': 'xporbtrails.client.mixins.json,xporbtrails.forge.mixins.json' }
+if (project.hasProperty('clientTests')) {
+    sourceSets { clientTest { java.srcDir rootProject.file('common/src/clientTest/java') } }
+    dependencies {
+        clientTestImplementation forgeMinecraft
+        clientTestImplementation files(tasks.named('jar'))
+    }
+    def probeJar = tasks.register('clientProbeJar', Jar) {
+        from sourceSets.clientTest.output
+        archiveClassifier = 'client-test'
+    }
+    sourceSets.clientTest.runtimeClasspath = files(probeJar) + configurations.clientTestRuntimeClasspath
+    minecraft.runs.named('client') {
+        with(sourceSets.clientTest) {
+            workingDir = layout.buildDirectory.dir('run/clientProbe')
+            mods { xporbtrails_client_test { source sourceSets.clientTest } }
+            args '--quickPlaySingleplayer', 'Probe World', '--username', 'ProbePlayer'
+            if (project.hasProperty('probeRestart')) systemProperty 'xporb.probeRestart', 'true'
+        }
+    }
+}

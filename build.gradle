@@ -1,118 +1,88 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
+    id 'base'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+    id 'net.minecraftforge.gradle' version "${forgegradle_version}" apply false
+    id 'net.neoforged.moddev' version "${moddevgradle_version}" apply false
 }
 
-repositories {
-	maven { url = "https://maven.terraformersmc.com/releases/" }
+subprojects {
+    apply plugin: 'java'
+    version = rootProject.version
+    group = rootProject.group
+    def platformProperties = file('gradle.properties')
+    if (platformProperties.exists()) {
+        def values = new Properties()
+        platformProperties.withInputStream { values.load(it) }
+        values.each { key, value -> extensions.extraProperties.set(key, value) }
+    }
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(25)
+        withSourcesJar()
+    }
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+    repositories { mavenCentral() }
+    tasks.withType(Test).configureEach { useJUnitPlatform() }
 }
 
-loom {
-	splitEnvironmentSourceSets()
-
-	mods {
-		"xporbtrails" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
+configure(subprojects.findAll { it.name != 'common' }) {
+    sourceSets.main.java.srcDir rootProject.file('common/src/main/java')
+    sourceSets.main.resources.srcDir rootProject.file('common/src/main/resources')
+    tasks.withType(AbstractArchiveTask).configureEach {
+        archiveBaseName = 'xp-orb-trails'
+        archiveVersion = "${project.name}-${project.version}+${rootProject.minecraft_version}"
+    }
+    tasks.named('jar') {
+        from(rootProject.file('LICENSE')) { rename { 'LICENSE_xp-orb-trails' } }
+    }
+    tasks.register('verifyReleaseJar') {
+        dependsOn tasks.named('jar')
+        doLast {
+            def artifact = project.hasProperty('verifyJarPath') ? file(project.property('verifyJarPath')) : tasks.named('jar').get().archiveFile.get().asFile
+            def required = [
+                'dev/goldeneggovo/xporbtrails/XpOrbTrailsClient.class',
+                'dev/goldeneggovo/xporbtrails/TrailRenderer.class',
+                'dev/goldeneggovo/xporbtrails/TrailConfigScreen.class',
+                'dev/goldeneggovo/xporbtrails/mixin/ClientPacketListenerMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/ExperienceOrbMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/GameRendererMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
+                'xporbtrails.client.mixins.json', 'pack.mcmeta', 'LICENSE_xp-orb-trails',
+                'assets/xporbtrails/icon.png',
+                'assets/xporbtrails/lang/en_us.json', 'assets/xporbtrails/lang/zh_cn.json'
+            ]
+            if (project.name == 'fabric') required += ['fabric.mod.json',
+                'dev/goldeneggovo/xporbtrails/FabricXpOrbTrailsClient.class',
+                'dev/goldeneggovo/xporbtrails/ModMenuIntegration.class']
+            if (project.name == 'forge') required += ['META-INF/mods.toml',
+                'dev/goldeneggovo/xporbtrails/ForgeXpOrbTrails.class', 'xporbtrails.forge.mixins.json',
+                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelExtractorMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelRendererMixin.class']
+            if (project.name == 'neoforge') required += ['META-INF/neoforge.mods.toml',
+                'dev/goldeneggovo/xporbtrails/NeoForgeXpOrbTrails.class']
+            new java.util.zip.ZipFile(artifact).withCloseable { zip ->
+                required.each { entry ->
+                    if (zip.getEntry(entry) == null) throw new GradleException("Release JAR is missing ${entry}: ${artifact}")
+                }
+                ['fabric.mod.json': 'fabric', 'META-INF/mods.toml': 'forge', 'META-INF/neoforge.mods.toml': 'neoforge'].each { entry, platform ->
+                    if (project.name != platform && zip.getEntry(entry) != null) throw new GradleException("Unexpected ${platform} metadata in ${artifact}")
+                }
+                ['FabricXpOrbTrailsClient': 'fabric', 'ModMenuIntegration': 'fabric', 'ForgeXpOrbTrails': 'forge', 'NeoForgeXpOrbTrails': 'neoforge'].each { entry, platform ->
+                    if (project.name != platform && zip.getEntry("dev/goldeneggovo/xporbtrails/${entry}.class") != null) throw new GradleException("Unexpected ${platform} entry point in ${artifact}")
+                }
+                if (zip.entries().any { it.name.contains('TrailClientTest') || it.name.contains('/xporbtrails/test/') }) throw new GradleException("Test classes found in ${artifact}")
+                def metadataPath = ['fabric': 'fabric.mod.json', 'forge': 'META-INF/mods.toml', 'neoforge': 'META-INF/neoforge.mods.toml'][project.name]
+                def metadata = zip.getInputStream(zip.getEntry(metadataPath)).getText('UTF-8')
+                if (metadata.contains('${') || !metadata.contains("${project.version}+mc${rootProject.minecraft_version}")) throw new GradleException("Incorrect release metadata in ${artifact}")
+                if (project.name == 'forge') {
+                    def manifest = new java.util.jar.Manifest(zip.getInputStream(zip.getEntry('META-INF/MANIFEST.MF')))
+                    if (manifest.mainAttributes.getValue('MixinConfigs') != 'xporbtrails.client.mixins.json,xporbtrails.forge.mixins.json') throw new GradleException("Forge mixins are not registered in ${artifact}")
+                }
+            }
+        }
+    }
+    tasks.named('check') { dependsOn tasks.named('verifyReleaseJar') }
 }
 
-dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	compileOnly "com.terraformersmc:modmenu:20.0.1"
-	testImplementation sourceSets.client.output
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
-
-}
-
-test {
-	useJUnitPlatform()
-}
-
-if (project.hasProperty('clientTests')) {
-	fabricApi.configureTests {
-		createSourceSet = true
-		modId = 'xporbtrails-client-tests'
-		enableGameTests = false
-		enableClientGameTests = true
-	}
-	dependencies {
-		gametestImplementation sourceSets.client.output
-		gametestImplementation 'com.terraformersmc:modmenu:20.0.1'
-	}
-}
-
-processResources {
-	def version = "${project.version}+mc${project.minecraft_version}"
-	inputs.property "version", version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": version
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
-}
-
-java {
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
-}
-
-tasks.withType(AbstractArchiveTask).configureEach {
-	archiveVersion = "fabric-${project.version}+${project.minecraft_version}"
-}
-
-jar {
-	def projectName = project.name
-	inputs.property "projectName", projectName
-
-	from("LICENSE") {
-		rename { "${it}_$projectName"}
-	}
-}
-
-def releaseJarTask = tasks.named('jar')
-tasks.register('verifyReleaseJar') {
-	dependsOn releaseJarTask
-	doLast {
-		def releaseJar = releaseJarTask.get().archiveFile.get().asFile
-		def requiredEntries = [
-			'dev/goldeneggovo/xporbtrails/TrailConfigScreen.class',
-			'dev/goldeneggovo/xporbtrails/ModMenuIntegration.class',
-			'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
-			'dev/goldeneggovo/xporbtrails/mixin/ClientPacketListenerMixin.class',
-			'assets/xporbtrails/lang/en_us.json',
-			'assets/xporbtrails/lang/zh_cn.json'
-		]
-		new java.util.zip.ZipFile(releaseJar).withCloseable { zip ->
-			requiredEntries.each { entry ->
-				if (zip.getEntry(entry) == null) {
-					throw new GradleException("Release JAR is missing ${entry}: ${releaseJar}")
-				}
-			}
-		}
-	}
-}
-
-tasks.named('check') {
-	dependsOn tasks.named('verifyReleaseJar')
-}
-
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
-
-	repositories {
-	}
-}
+tasks.named('build') { dependsOn subprojects.collect { "${it.path}:build" } }
+tasks.register('test') { dependsOn ':common:test' }
+tasks.register('verifyReleaseJar') { dependsOn subprojects.findAll { it.name != 'common' }.collect { "${it.path}:verifyReleaseJar" } }

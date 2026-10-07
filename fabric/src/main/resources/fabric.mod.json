@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "xporbtrails",
+	"version": "${version}",
+	"name": "XP Orb Trails",
+	"description": "Adds smooth, colorful, highly customizable trails and pickup flashes to experience orbs—without shaders.",
+	"authors": [
+		"GoldenEggOVO"
+	],
+	"contact": {
+		"homepage": "https://github.com/GoldenEggOVO/XP-Orb-Trails",
+		"sources": "https://github.com/GoldenEggOVO/XP-Orb-Trails",
+		"issues": "https://github.com/GoldenEggOVO/XP-Orb-Trails/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/xporbtrails/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.goldeneggovo.xporbtrails.FabricXpOrbTrailsClient"
+		],
+		"modmenu": [
+			"dev.goldeneggovo.xporbtrails.ModMenuIntegration"
+		]
+	},
+	"mixins": [
+		{
+			"config": "xporbtrails.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=25",
+		"fabric-api": ">=${fabric_api_version}"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

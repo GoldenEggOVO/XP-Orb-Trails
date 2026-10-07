@@ -1,0 +1,28 @@
+plugins { id 'net.fabricmc.fabric-loom' }
+
+repositories { maven { url = 'https://maven.terraformersmc.com/releases/' } }
+loom {
+    mods { xporbtrails { sourceSet sourceSets.main } }
+}
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    compileOnly "com.terraformersmc:modmenu:${modmenu_version}"
+}
+if (project.hasProperty('clientTests')) {
+    fabricApi.configureTests {
+        createSourceSet = true
+        modId = 'xporbtrails-client-tests'
+        enableGameTests = false
+        enableClientGameTests = true
+    }
+    dependencies { gametestImplementation "com.terraformersmc:modmenu:${modmenu_version}" }
+}
+processResources {
+    def metadata = [version: "${project.version}+mc${rootProject.minecraft_version}",
+        minecraft_version: rootProject.minecraft_version, loader_version: loader_version,
+        fabric_api_version: fabric_api_version]
+    inputs.properties metadata
+    filesMatching('fabric.mod.json') { expand metadata }
+}
