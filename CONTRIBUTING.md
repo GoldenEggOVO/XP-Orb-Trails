@@ -85,7 +85,7 @@ Use a separate Minecraft instance for testing; keep player data out of Git.
    Preserve existing releases unless replacement is explicitly requested.
 5. Download published JARs and compare SHA-256 with local builds.
 
-Metadata uses the semantic version `1.3.0+mc26.2`; the loader prefix belongs
+Metadata uses the semantic version `1.4.0+mc26.2`; the loader prefix belongs
 in release names, tags, and filenames. Both Minecraft branches may share a
 mod version. On Modrinth, select the correct game version and loader as well.
 Use Git and GitHub CLI for publishing. This repository has no Actions workflows.

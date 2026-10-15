@@ -43,6 +43,8 @@ Choose one loader:
 
 ## Installation
 
+Version 1.4.0 is a local test build. Published versions remain available below.
+
 1. Choose the JAR matching both your loader and Minecraft version:
    `xp-orb-trails-<loader>-1.3.0+26.2.jar`.
 2. Put that JAR in the client `mods` folder. Fabric also needs Fabric API.

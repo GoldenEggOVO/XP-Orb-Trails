@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 — Minecraft 26.2 (Unreleased)
+
+- Reduce repeated calculations while generating trail meshes and smoothing trail points.
+- Trim excess trail history in a single operation while retaining the latest points.
+- Add regression checks for trail history limits, point timing, and smooth movement.
+
+
 ## 1.3.0 — Minecraft 26.2
 
 - Add Forge and NeoForge client support alongside Fabric.
