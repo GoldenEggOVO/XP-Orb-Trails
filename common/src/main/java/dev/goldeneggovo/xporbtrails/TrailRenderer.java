@@ -228,6 +228,10 @@ public final class TrailRenderer {
                                    double rainbowSpeed, double tailScale, double middleScale, double headScale, int sides) {
         if (samples.size() < 2) return;
         int faces = Math.max(2, Math.min(32, sides));
+        int lastSample = samples.size() - 1;
+        boolean solid = "solid".equals(colorMode);
+        boolean rainbow = "rainbow".equals(colorMode);
+        double seconds = now / 1_000_000_000.0;
         double[] previousRing = RING_A, ring = RING_B;
         int previousColor = 0;
         Vec3 normal = null, binormal = new Vec3(0, 0, 1);
@@ -235,7 +239,7 @@ public final class TrailRenderer {
 
         for (int i = 0; i < samples.size(); i++) {
             Sample sample = samples.get(i);
-            double progress = i / (double) (samples.size() - 1);
+            double progress = i / (double) lastSample;
             double age = clamp((now - sample.time) / (double) lifetime);
             double ageFade = Math.pow(1.0 - smoothStep(age), 0.72);
             double headFade = smoothStep(Math.min(1.0, progress * 1.25));
@@ -249,10 +253,9 @@ public final class TrailRenderer {
             }
             double radius = width * 0.5 * widthScale;
             int rgb;
-            if ("solid".equals(colorMode)) {
+            if (solid) {
                 rgb = startColor;
-            } else if ("rainbow".equals(colorMode)) {
-                double seconds = now / 1_000_000_000.0;
+            } else if (rainbow) {
                 rgb = hsvToRgb((float) ((progress * 0.72 + seconds * rainbowSpeed) % 1.0), 0.88F, 1.0F);
             } else {
                 rgb = mixColor(startColor, endColor, (float) progress);
@@ -512,7 +515,6 @@ public final class TrailRenderer {
                 return;
             }
             Point previous = points.get(points.size() - 1);
-            double distance = previous.position.distanceTo(position);
             if (points.size() > 1) {
                 Point before = points.get(points.size() - 2);
                 if (before.position.distanceTo(position) < spacing) {
@@ -520,6 +522,7 @@ public final class TrailRenderer {
                     return;
                 }
             }
+            double distance = previous.position.distanceTo(position);
             if (distance < 0.006) return;
             int inserts = Math.min(8, Math.max(1, (int) Math.ceil(distance / spacing)));
             for (int i = 1; i <= inserts; i++) {
@@ -527,15 +530,18 @@ public final class TrailRenderer {
                 points.add(new Point(previous.position.lerp(position, t),
                         (long) (previous.time + (now - previous.time) * t)));
             }
-            while (points.size() > MAX_POINTS) points.remove(0);
+            int excess = points.size() - MAX_POINTS;
+            if (excess > 0) points.subList(0, excess).clear();
         }
 
         void flow(double strength) {
-            for (int i = 0; i < points.size() - 1; i++) {
+            int lastPoint = points.size() - 1;
+            double rate = 0.008 + strength * 0.055;
+            for (int i = 0; i < lastPoint; i++) {
                 Point point = points.get(i);
                 Point next = points.get(i + 1);
-                double trailFactor = 1.0 - i / (double) Math.max(1, points.size() - 1);
-                double amount = (0.008 + strength * 0.055) * (0.35 + trailFactor * 0.65);
+                double trailFactor = 1.0 - i / (double) lastPoint;
+                double amount = rate * (0.35 + trailFactor * 0.65);
                 points.set(i, new Point(point.position.lerp(next.position, amount), point.time));
             }
         }
