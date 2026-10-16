@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0 — Minecraft 26.3 (Unreleased)
+## 1.4.0 — Minecraft 26.3
 
 - Reduce repeated calculations while generating trail meshes and smoothing trail points.
 - Trim excess trail history in a single operation while retaining the latest points.
