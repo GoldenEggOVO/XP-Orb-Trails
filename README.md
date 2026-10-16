@@ -116,6 +116,9 @@ matching your Minecraft version.
 | 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.3.0+26.3) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.3.0+26.3) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.3.0+26.3) |
 | 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.3.0+26.2) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.3.0+26.2) | [1.3.0](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.3.0+26.2) |
 
+The `26.1` branch also provides local test builds for Minecraft 26.1, 26.1.1,
+and 26.1.2.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout, validation, and
 release process. This repository does not use GitHub Actions workflows;
 builds and release verification are run locally.
