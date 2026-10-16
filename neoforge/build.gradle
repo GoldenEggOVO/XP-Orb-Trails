@@ -17,7 +17,9 @@ if (project.hasProperty('clientTests')) {
         }
     }
     neoForge.addModdingDependenciesTo(sourceSets.clientTest)
-    dependencies { clientTestImplementation files(tasks.named('jar')) }
+    dependencies {
+        clientTestImplementation(project.hasProperty('probeModJar') ? files(project.property('probeModJar')) : files(tasks.named('jar')))
+    }
     neoForge {
         mods { xporbtrails_client_test { sourceSet sourceSets.clientTest } }
         runs {

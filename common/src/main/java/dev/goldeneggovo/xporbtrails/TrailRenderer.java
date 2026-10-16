@@ -1,42 +1,34 @@
 package dev.goldeneggovo.xporbtrails;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.platform.BlendFactor;
+import com.mojang.blaze3d.platform.SourceFactor;
+import com.mojang.blaze3d.platform.DestFactor;
 import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.BindGroupLayouts;
-import net.minecraft.client.renderer.StagedVertexBuffer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import dev.goldeneggovo.xporbtrails.mixin.RenderPipelinesAccessor;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import dev.goldeneggovo.xporbtrails.mixin.RenderTypeAccessor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalDouble;
 
 public final class TrailRenderer {
     private static final int CURVE_STEPS = 4;
@@ -46,14 +38,13 @@ public final class TrailRenderer {
     private static final double[] RING_A = new double[32 * 3];
     private static final double[] RING_B = new double[32 * 3];
     private static final RenderPipeline ALPHA_PIPELINE = createPipeline("xp_orb_trails_alpha",
-            new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA));
+            new BlendFunction(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA));
     private static final RenderPipeline ADDITIVE_PIPELINE = createPipeline("xp_orb_trails_additive",
-            new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE));
-    private static final StagedVertexBuffer BUFFER =
-            new StagedVertexBuffer(() -> "XP Orb Trail Buffer", RenderType.SMALL_BUFFER_SIZE);
-    private static final Vector4f COLOR_MODULATOR = new Vector4f(1, 1, 1, 1);
-    private static final Vector3f MODEL_OFFSET = new Vector3f();
-    private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
+            new BlendFunction(SourceFactor.SRC_ALPHA, DestFactor.ONE));
+    private static final RenderType ALPHA_TYPE = createRenderType("xp_orb_trails_alpha", ALPHA_PIPELINE, true);
+    private static final RenderType ADDITIVE_TYPE = createRenderType("xp_orb_trails_additive", ADDITIVE_PIPELINE, false);
+    private static final ByteBufferBuilder BUFFER = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
+    private static final MultiBufferSource.BufferSource VERTICES = MultiBufferSource.immediate(BUFFER);
     private static final Map<Integer, Trail> TRAILS = new LinkedHashMap<>();
     private static volatile List<RenderTrail> renderTrails = List.of();
     private static ClientLevel lastLevel;
@@ -75,7 +66,7 @@ public final class TrailRenderer {
         updateWorld(level);
         if (!cfg.enabled) return;
 
-        Vec3 camera = Minecraft.getInstance().gameRenderer.mainCamera().position();
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().position();
         if (orb.position().distanceToSqr(camera) > cfg.renderRange * cfg.renderRange) {
             TRAILS.remove(orb.getId());
             return;
@@ -129,7 +120,7 @@ public final class TrailRenderer {
             point = point.subtract(motion.scale(cfg.motionShift * t / speed));
         }
         if (cfg.cameraPush > 0.0 && client.gameRenderer != null) {
-            Vec3 away = point.subtract(client.gameRenderer.mainCamera().position());
+            Vec3 away = point.subtract(client.gameRenderer.getMainCamera().position());
             double length = away.length();
             if (length > 1.0E-6) point = point.add(away.scale(cfg.cameraPush / length));
         }
@@ -193,13 +184,8 @@ public final class TrailRenderer {
         if (snapshot.isEmpty()) return;
 
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
-        RenderPipeline pipeline = cfg.additiveGlow ? ADDITIVE_PIPELINE : ALPHA_PIPELINE;
-        VertexFormat format = pipeline.getVertexFormatBinding(0);
-        if (format == null) return;
-        PrimitiveTopology topology = pipeline.getPrimitiveTopology();
-        // Vertices are camera-relative, so vanilla's origin-distance sort orders all transparent quads.
-        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, topology, cfg.additiveGlow ? null : VertexSorting.DISTANCE_TO_ORIGIN);
-        VertexConsumer vertices = BUFFER.getVertexBuilder(draw);
+        RenderType type = cfg.additiveGlow ? ADDITIVE_TYPE : ALPHA_TYPE;
+        VertexConsumer vertices = VERTICES.getBuffer(type);
 
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
 
@@ -216,10 +202,7 @@ public final class TrailRenderer {
             }
         }
 
-        BUFFER.upload();
-        StagedVertexBuffer.ExecuteInfo info = BUFFER.getExecuteInfo(draw);
-        if (info != null) draw(info, pipeline);
-        BUFFER.endFrame();
+        VERTICES.endBatch(type);
     }
 
     private static void appendTube(VertexConsumer out, List<Sample> samples, Vec3 camera,
@@ -228,6 +211,10 @@ public final class TrailRenderer {
                                    double rainbowSpeed, double tailScale, double middleScale, double headScale, int sides) {
         if (samples.size() < 2) return;
         int faces = Math.max(2, Math.min(32, sides));
+        int lastSample = samples.size() - 1;
+        boolean solid = "solid".equals(colorMode);
+        boolean rainbow = "rainbow".equals(colorMode);
+        double seconds = now / 1_000_000_000.0;
         double[] previousRing = RING_A, ring = RING_B;
         int previousColor = 0;
         Vec3 normal = null, binormal = new Vec3(0, 0, 1);
@@ -235,7 +222,7 @@ public final class TrailRenderer {
 
         for (int i = 0; i < samples.size(); i++) {
             Sample sample = samples.get(i);
-            double progress = i / (double) (samples.size() - 1);
+            double progress = i / (double) lastSample;
             double age = clamp((now - sample.time) / (double) lifetime);
             double ageFade = Math.pow(1.0 - smoothStep(age), 0.72);
             double headFade = smoothStep(Math.min(1.0, progress * 1.25));
@@ -249,10 +236,9 @@ public final class TrailRenderer {
             }
             double radius = width * 0.5 * widthScale;
             int rgb;
-            if ("solid".equals(colorMode)) {
+            if (solid) {
                 rgb = startColor;
-            } else if ("rainbow".equals(colorMode)) {
-                double seconds = now / 1_000_000_000.0;
+            } else if (rainbow) {
                 rgb = hsvToRgb((float) ((progress * 0.72 + seconds * rainbowSpeed) % 1.0), 0.88F, 1.0F);
             } else {
                 rgb = mixColor(startColor, endColor, (float) progress);
@@ -458,35 +444,21 @@ public final class TrailRenderer {
         return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
     }
 
-    private static void draw(StagedVertexBuffer.ExecuteInfo info, RenderPipeline pipeline) {
-        Minecraft client = Minecraft.getInstance();
-        GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
-                RenderSystem.getModelViewMatrixCopy(), COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
-        RenderTarget target = client.gameRenderer.mainRenderTarget();
-        GpuTextureView color = target.getColorTextureView();
-        if (color == null) return;
-
-        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "XP Orb Trails", color, Optional.empty(), target.getDepthTextureView(), OptionalDouble.empty())) {
-            pass.setPipeline(pipeline);
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform("DynamicTransforms", transforms);
-            pass.setVertexBuffer(0, info.vertexBuffer().slice());
-            pass.setIndexBuffer(info.indexBuffer(), info.indexType());
-            pass.drawIndexed(info.indexCount(), 1, info.firstIndex(), info.baseVertex(), 0);
-        }
+    private static RenderType createRenderType(String name, RenderPipeline pipeline, boolean sorted) {
+        var setup = RenderSetup.builder(pipeline).bufferSize(RenderType.SMALL_BUFFER_SIZE);
+        if (sorted) setup.sortOnUpload();
+        return RenderTypeAccessor.xporbtrails$create(name, setup.createRenderSetup());
     }
 
     private static RenderPipeline createPipeline(String name, BlendFunction blend) {
         return RenderPipelinesAccessor.xporbtrails$register(RenderPipeline.builder()
                 .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", name))
-                .withBindGroupLayout(BindGroupLayouts.PROJECTION)
-                .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+                .withUniform("Projection", UniformType.UNIFORM_BUFFER)
+                .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
                 .withVertexShader(Identifier.withDefaultNamespace("core/position_color"))
                 .withFragmentShader(Identifier.withDefaultNamespace("core/position_color"))
-                .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
-                .withPrimitiveTopology(PrimitiveTopology.QUADS)
-                .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+                .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withCull(false)
                 .withColorTargetState(new ColorTargetState(blend))
                 .build());
@@ -512,7 +484,6 @@ public final class TrailRenderer {
                 return;
             }
             Point previous = points.get(points.size() - 1);
-            double distance = previous.position.distanceTo(position);
             if (points.size() > 1) {
                 Point before = points.get(points.size() - 2);
                 if (before.position.distanceTo(position) < spacing) {
@@ -520,6 +491,7 @@ public final class TrailRenderer {
                     return;
                 }
             }
+            double distance = previous.position.distanceTo(position);
             if (distance < 0.006) return;
             int inserts = Math.min(8, Math.max(1, (int) Math.ceil(distance / spacing)));
             for (int i = 1; i <= inserts; i++) {
@@ -527,15 +499,18 @@ public final class TrailRenderer {
                 points.add(new Point(previous.position.lerp(position, t),
                         (long) (previous.time + (now - previous.time) * t)));
             }
-            while (points.size() > MAX_POINTS) points.remove(0);
+            int excess = points.size() - MAX_POINTS;
+            if (excess > 0) points.subList(0, excess).clear();
         }
 
         void flow(double strength) {
-            for (int i = 0; i < points.size() - 1; i++) {
+            int lastPoint = points.size() - 1;
+            double rate = 0.008 + strength * 0.055;
+            for (int i = 0; i < lastPoint; i++) {
                 Point point = points.get(i);
                 Point next = points.get(i + 1);
-                double trailFactor = 1.0 - i / (double) Math.max(1, points.size() - 1);
-                double amount = (0.008 + strength * 0.055) * (0.35 + trailFactor * 0.65);
+                double trailFactor = 1.0 - i / (double) lastPoint;
+                double amount = rate * (0.35 + trailFactor * 0.65);
                 points.set(i, new Point(point.position.lerp(next.position, amount), point.time));
             }
         }

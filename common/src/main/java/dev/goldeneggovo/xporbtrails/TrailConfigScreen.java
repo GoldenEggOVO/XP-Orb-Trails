@@ -83,7 +83,7 @@ public final class TrailConfigScreen extends Screen {
         reset.active = page != Page.PROFILES;
         addRenderableWidget(reset);
         addRenderableWidget(Button.builder(text("open_preview"), b -> {
-            rememberScroll(); XpOrbTrailsClient.saveConfig(); minecraft.gui.setScreen(preview);
+            rememberScroll(); XpOrbTrailsClient.saveConfig(); minecraft.setScreen(preview);
         }).bounds(panelX + fw + 6, height - 28, fw, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(panelX + 2 * (fw + 6), height - 28, fw, 20).build());
@@ -347,7 +347,7 @@ public final class TrailConfigScreen extends Screen {
         row(key, button(Component.literal("■ ").withStyle(s -> s.withColor(value))
                 .append(Component.literal(String.format(Locale.ROOT, "#%06X", value & 0xFFFFFF)).withStyle(s -> s.withColor(0xFFFFFF))), () -> {
             rememberScroll();
-            minecraft.gui.setScreen(new ColorPickerScreen(this, value, v -> { setter.accept(v); changed(); }));
+            minecraft.setScreen(new ColorPickerScreen(this, value, v -> { setter.accept(v); changed(); }));
         }));
     }
     private static Component colorLabel(Component label, int start, int end) {
@@ -360,7 +360,7 @@ public final class TrailConfigScreen extends Screen {
                 (sides == 2 ? "flat" : sides == 32 ? "round" : "sides"), sides);
     }
     private void setColors(int start, int end) { XpOrbTrailsClient.CONFIG.startColor = start; XpOrbTrailsClient.CONFIG.endColor = end; changed(); }
-    private void choose(String key, List<TrailChoiceScreen.Choice> choices) { rememberScroll(); minecraft.gui.setScreen(new TrailChoiceScreen(this, text(key), choices)); }
+    private void choose(String key, List<TrailChoiceScreen.Choice> choices) { rememberScroll(); minecraft.setScreen(new TrailChoiceScreen(this, text(key), choices)); }
     private Component shapeName() {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
         return text("shape." + SHAPES.stream().filter(s -> s.tail() == c.tailWidthScale
@@ -388,7 +388,7 @@ public final class TrailConfigScreen extends Screen {
         graphics.centeredText(font, title, width / 2, 10, 0xFFFFFFFF);
         if (wide) preview.extractPreview(graphics, previewX, 56, previewWidth, height - 96, true);
     }
-    @Override public void onClose() { XpOrbTrailsClient.saveConfig(); minecraft.gui.setScreen(parent); }
+    @Override public void onClose() { XpOrbTrailsClient.saveConfig(); minecraft.setScreen(parent); }
     @Override public boolean isPauseScreen() { return false; }
 
     private static final class ConfigSlider extends AbstractSliderButton {

@@ -32,7 +32,7 @@ public final class NeoForgeXpOrbTrails {
             Minecraft client = Minecraft.getInstance();
             TrailRenderer.updateWorld(client.level);
             while (openSettings.consumeClick()) {
-                client.gui.setScreen(XpOrbTrailsClient.createConfigScreen(client.gui.screen()));
+                client.setScreen(XpOrbTrailsClient.createConfigScreen(client.screen));
             }
         });
         NeoForge.EVENT_BUS.addListener((ExtractLevelRenderStateEvent event) -> TrailRenderer.extract(

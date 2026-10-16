@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ForgeLevelRendererMixin {
     @Shadow @Final private LevelRenderState levelRenderState;
 
-    @Inject(method = "render", at = @At(value = "INVOKE",
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE",
             target = "Lorg/joml/Matrix4fStack;popMatrix()Lorg/joml/Matrix4fStack;"))
     private void xporbtrails$render(CallbackInfo ci) {
         TrailRenderer.render(levelRenderState.cameraRenderState.pos);

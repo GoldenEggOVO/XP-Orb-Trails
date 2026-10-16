@@ -1,8 +1,8 @@
 # Contributing
 
 XP Orb Trails supports Fabric, Forge, and NeoForge on the client only.
-Choose the Minecraft branch matching your target: `26.3` or `26.2`.
-Apply shared fixes to both branches, adapt Minecraft APIs separately, and
+Choose the Minecraft branch matching your target: `26.3`, `26.2`, or `26.1`.
+Apply shared fixes to all supported branches, adapt Minecraft APIs separately, and
 verify each loader before calling a shared change complete.
 
 ## Source layout
@@ -25,7 +25,7 @@ Each loader compiles the common sources against its Minecraft environment.
 Common runtime code must not import loader-specific APIs. Platform entry points
 supply the configuration directory, events, key binding, and settings-screen
 factory. User-facing text uses matching keys in `en_us.json` and `zh_cn.json`.
-The 26.2 and 26.3 render backends retain their own Minecraft API types.
+Each Minecraft branch retains its own render backend and API types. The 26.1 branch builds against 26.1.2 and checks the same JARs on 26.1 and 26.1.1.
 
 ## Build and validation
 
@@ -85,8 +85,8 @@ Use a separate Minecraft instance for testing; keep player data out of Git.
    Preserve existing releases unless replacement is explicitly requested.
 5. Download published JARs and compare SHA-256 with local builds.
 
-Metadata uses the semantic version `1.3.0+mc26.2`; the loader prefix belongs
-in release names, tags, and filenames. Both Minecraft branches may share a
+Metadata uses the semantic version `1.4.0+mc26.1.2`; the loader prefix belongs
+in release names, tags, and filenames. Minecraft branches may share a
 mod version. On Modrinth, select the correct game version and loader as well.
 Use Git and GitHub CLI for publishing. This repository has no Actions workflows.
 Keep build output, runtime files, credentials, and local reports out of Git.

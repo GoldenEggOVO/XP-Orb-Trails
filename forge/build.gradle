@@ -24,7 +24,7 @@ if (project.hasProperty('clientTests')) {
     sourceSets { clientTest { java.srcDir rootProject.file('common/src/clientTest/java') } }
     dependencies {
         clientTestImplementation forgeMinecraft
-        clientTestImplementation files(tasks.named('jar'))
+        clientTestImplementation(project.hasProperty('probeModJar') ? files(project.property('probeModJar')) : files(tasks.named('jar')))
     }
     def probeJar = tasks.register('clientProbeJar', Jar) {
         from sourceSets.clientTest.output

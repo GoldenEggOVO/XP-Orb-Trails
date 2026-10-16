@@ -134,7 +134,7 @@ public final class ColorPickerScreen extends Screen {
         }
     }
 
-    @Override public void onClose() { if (minecraft != null) minecraft.gui.setScreen(parent); }
+    @Override public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
     @Override public boolean isPauseScreen() { return false; }
     private int currentColor() { return hsvToRgb(hue, saturation, brightness); }
     private static boolean inside(double x, double y, int bx, int by, int bw, int bh) { return x >= bx && x < bx + bw && y >= by && y < by + bh; }

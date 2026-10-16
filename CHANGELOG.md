@@ -1,80 +1,11 @@
 # Changelog
 
-## 1.3.0 — Minecraft 26.2
+## 1.4.0 — Minecraft 26.1.x (Unreleased)
 
-- Add Forge and NeoForge client support alongside Fabric.
-- Open trail settings from the Forge and NeoForge Mods screens or the existing key binding.
-- Share configuration, menus, translations, and trail logic across loader modules.
-- Preserve existing settings, saved colors, and profiles when changing loaders.
-- Keep camera transforms active when drawing trails on Forge and NeoForge.
+- Add Fabric, Forge, and NeoForge support for Minecraft 26.1, 26.1.1, and 26.1.2.
+- Adapt screen navigation, render buffers, and depth testing to the 26.1 rendering API.
+- Preserve trail appearance, settings, saved colors, and profiles from the 26.2/26.3 implementation.
+- Reduce repeated mesh and smoothing calculations; trim excess trail history in one operation.
+- Add regression checks for trail history limits, point timing, and smooth movement.
 
-## 1.2.0 — Minecraft 26.2
-
-- Group overall effects under Common and all pickup flash controls under Appearance, with matching page resets.
-- Clarify the Motion and Position section and Profiles tab labels.
-- Move trail disappearance fading to Common trail settings and clarify its label.
-- Repair non-finite numeric values in configuration files and saved profiles before saving.
-- Show a ribbon or polygon diagram for the selected cross-section in the preview.
-- Match preview pickup flash timing to the configured in-game duration.
-- Keep the enabled state, render range, and trail limit when applying built-in appearance presets.
-- Preserve full configuration restoration for saved custom profiles.
-- Replay the pickup flash immediately in the preview.
-- Rename and overwrite saved color pairs, including when all 12 slots are full.
-- Use `fabric-<mod-version>+<minecraft-version>` for release names and JAR filenames.
-
-## 1.0.3 — Minecraft 26.2
-
-- Trigger pickup flashes from vanilla pickup packets, including stationary and partially collected orbs.
-- Avoid false pickup flashes when nearby orbs disappear for other reasons.
-- Sort ordinary alpha-blended trail and flash quads back-to-front using vanilla vertex sorting.
-
-- Stream trail meshes through reusable ring buffers and cache circular cross-section directions.
-- Avoid copying control-point lists and pre-size curve sample buffers.
-- Choose unused automatic names for saved colors and profiles after deletion.
-- Refresh menu sections and deletion confirmations without unnecessary configuration writes.
-
-## 1.0.2 — Minecraft 26.2
-
-- Add a cross-section slider from a camera-facing ribbon (2 sides) to a round approximation (32 sides).
-- Default new configurations to a 2-sided ribbon with a trail width of 0.1; preserve existing settings.
-- Save cross-section choices in custom profiles and restore them when applying a profile.
-- Restore saved color deletion with confirmation, including when all 12 slots are full.
-- Show a single swatch on individual color buttons.
-
-- Reorganize settings into scrollable Common, Appearance, Advanced, and My Profiles pages.
-- Replace cycling presets with selection lists and collapse advanced detail controls.
-- Merge opacity and glow strength into Effect Strength, preserving existing configurations and profiles.
-- Make pickup flash size independent of trail width and show a live preview in wide windows.
-
-- Keep trails continuous when the number of experience orbs exceeds the trail limit.
-- Skip distant orbs before tracking and release their trail slots when they leave range.
-- Clear trails when disabled, when changing worlds, and when disconnecting.
-- Restore the pickup flash style when resetting the pickup settings page.
-- Fit the color picker controls within smaller windows and larger GUI scales.
-
-## 1.0.1 — Minecraft 26.2
-
-- Restore the complete settings UI in the release JAR. Trail settings can be
-  edited using Mod Menu's Config button or the Open Trail Settings key binding.
-- Make built-in color presets follow Minecraft's selected language, with English
-  as the fallback. New preset and profile names use the language selected when
-  they are created.
-- Standardize author credits and the Java package namespace on GoldenEggOVO.
-- Verify settings classes, Mod Menu integration, and translations in the release JAR.
-
-## 1.0.0 - 2026-08-31
-
-First public release for Minecraft 26.2.
-
-- Add smooth, interpolated three-dimensional trails to moving experience orbs.
-- Add solid, gradient, and animated rainbow color modes with an in-game color picker.
-- Add separate head, middle, and tail widths with ready-made shape presets.
-- Add adjustable lifetime, smoothing, opacity, glow, motion shift, camera push,
-  render distance, pickup fading, and performance limits.
-- Add optional soft, star, and ring pickup flashes with conservative defaults.
-- Add built-in presets and named custom profiles with rename, overwrite, and
-  guarded deletion controls.
-- Add a standalone animated preview window and immediate in-game feedback.
-- Add complete Simplified Chinese and English translations.
-- Add safe configuration recovery, malformed-file backups, and atomic saving.
-- Add Mod Menu integration and a configurable settings keybind.
+Earlier changes are documented in the [Minecraft 26.2 changelog](https://github.com/GoldenEggOVO/XP-Orb-Trails/blob/26.2/CHANGELOG.md).

@@ -54,7 +54,7 @@ public final class TrailClientProbe {
             if (captureFailure != null) throw new AssertionError("Screenshot verification failed", captureFailure);
             if (System.nanoTime() - START >= 180_000_000_000L) throw new AssertionError("Client probe timed out");
             if (!started) {
-                if (CLIENT.level == null || CLIENT.player == null || CLIENT.gui.overlay() != null) return;
+                if (CLIENT.level == null || CLIENT.player == null || CLIENT.getOverlay() != null) return;
                 started = true;
                 plan();
             }
@@ -88,8 +88,8 @@ public final class TrailClientProbe {
             }
             CLIENT.options.guiScale().set(2);
             CLIENT.resizeGui();
-            CLIENT.gui.setScreen(configScreen.apply(CLIENT.gui.screen()));
-            check(CLIENT.gui.screen() instanceof TrailConfigScreen, "Loader config button must create settings");
+            CLIENT.setScreen(configScreen.apply(CLIENT.screen));
+            check(CLIENT.screen instanceof TrailConfigScreen, "Loader config button must create settings");
             check("Common".equals(Component.translatable("screen.xporbtrails.common").getString()), "English menu must load");
         });
         capture("menu-common-en");
@@ -109,8 +109,8 @@ public final class TrailClientProbe {
             check(XpOrbTrailsClient.CONFIG.renderRange == new TrailConfig().renderRange,
                     "Advanced reset must restore performance settings");
             click("profiles");
-            check(widgets(CLIENT.gui.screen()).stream().anyMatch(w -> !w.active && w.getMessage().getString().equals(Component.translatable("screen.xporbtrails.reset").getString())),
-                    "Profiles must not reset other pages: " + widgets(CLIENT.gui.screen()).stream().map(w -> w.getMessage().getString() + "=" + w.active).toList());
+            check(widgets(CLIENT.screen).stream().anyMatch(w -> !w.active && w.getMessage().getString().equals(Component.translatable("screen.xporbtrails.reset").getString())),
+                    "Profiles must not reset other pages: " + widgets(CLIENT.screen).stream().map(w -> w.getMessage().getString() + "=" + w.active).toList());
         });
         capture("menu-profiles");
         step(() -> {
@@ -118,31 +118,31 @@ public final class TrailClientProbe {
             click("reset");
             check(XpOrbTrailsClient.CONFIG.width == 0.1, "Common reset must restore default width");
             click("open_preview");
-            check(CLIENT.gui.screen() instanceof TrailPreviewScreen, "Preview must open");
+            check(CLIENT.screen instanceof TrailPreviewScreen, "Preview must open");
         });
         capture("preview");
         step(() -> {
-            CLIENT.gui.screen().onClose();
+            CLIENT.screen.onClose();
             reload = language("zh_cn");
         });
-        await(() -> reload.isDone() && CLIENT.gui.overlay() == null);
+        await(() -> reload.isDone() && CLIENT.getOverlay() == null);
         step(() -> check("常用".equals(Component.translatable("screen.xporbtrails.common").getString()), "Chinese menu must load"));
         capture("menu-common-zh");
         step(() -> reload = language("en_us"));
-        await(() -> reload.isDone() && CLIENT.gui.overlay() == null);
+        await(() -> reload.isDone() && CLIENT.getOverlay() == null);
         step(() -> {
-            CLIENT.gui.screen().onClose();
-            CLIENT.gui.setScreen(null);
+            CLIENT.screen.onClose();
+            CLIENT.setScreen(null);
             KeyMapping key = java.util.Arrays.stream(CLIENT.options.keyMappings)
                     .filter(k -> k.getName().equals("key.xporbtrails.open_settings")).findFirst().orElseThrow();
             key.setKey(InputConstants.getKey("key.keyboard.f8"));
             KeyMapping.resetMapping();
             KeyMapping.click(key.getKey());
         });
-        await(() -> CLIENT.gui.screen() instanceof TrailConfigScreen);
+        await(() -> CLIENT.screen instanceof TrailConfigScreen);
         step(() -> {
-            CLIENT.gui.screen().onClose();
-            CLIENT.gui.setScreen(null);
+            CLIENT.screen.onClose();
+            CLIENT.setScreen(null);
             CLIENT.options.pauseOnLostFocus = false;
             XpOrbTrailsClient.CONFIG = new TrailConfig();
             trails().clear();
@@ -210,7 +210,7 @@ public final class TrailClientProbe {
     }
 
     private static ExperienceOrb orb(int id) {
-        Vec3 camera = CLIENT.gameRenderer.mainCamera().position();
+        Vec3 camera = CLIENT.gameRenderer.getMainCamera().position();
         ExperienceOrb orb = new ExperienceOrb(CLIENT.level, camera.x - 1, camera.y + 0.5, camera.z + 3, 1);
         orb.setId(id);
         orb.setNoGravity(true);
@@ -240,7 +240,7 @@ public final class TrailClientProbe {
         waitTicks(3);
         step(() -> {
             capturePending = true;
-            Screenshot.takeScreenshot(CLIENT.gameRenderer.mainRenderTarget(), image -> {
+            Screenshot.takeScreenshot(CLIENT.getMainRenderTarget(), image -> {
                 try {
                     Path directory = CLIENT.gameDirectory.toPath().resolve("screenshots");
                     Files.createDirectories(directory);
@@ -277,7 +277,7 @@ public final class TrailClientProbe {
 
     private static void click(String key) {
         Component label = Component.translatable("screen.xporbtrails." + key);
-        Button button = widgets(CLIENT.gui.screen()).stream().filter(w -> w instanceof Button && w.active && w.getMessage().equals(label))
+        Button button = widgets(CLIENT.screen).stream().filter(w -> w instanceof Button && w.active && w.getMessage().equals(label))
                 .map(w -> (Button) w).findFirst().orElseThrow(() -> new AssertionError("Missing button: " + key));
         button.onPress(new net.minecraft.client.input.InputWithModifiers() {
             public int input() { return InputConstants.MOUSE_BUTTON_LEFT; }

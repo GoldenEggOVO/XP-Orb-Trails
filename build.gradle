@@ -13,7 +13,7 @@ subprojects {
     if (platformProperties.exists()) {
         def values = new Properties()
         platformProperties.withInputStream { values.load(it) }
-        values.each { key, value -> extensions.extraProperties.set(key, value) }
+        values.each { key, value -> extensions.extraProperties.set(key, rootProject.findProperty(key) ?: value) }
     }
     java {
         toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -46,6 +46,7 @@ configure(subprojects.findAll { it.name != 'common' }) {
                 'dev/goldeneggovo/xporbtrails/mixin/ExperienceOrbMixin.class',
                 'dev/goldeneggovo/xporbtrails/mixin/GameRendererMixin.class',
                 'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
+                'dev/goldeneggovo/xporbtrails/mixin/RenderTypeAccessor.class',
                 'xporbtrails.client.mixins.json', 'pack.mcmeta', 'LICENSE_xp-orb-trails',
                 'assets/xporbtrails/icon.png',
                 'assets/xporbtrails/lang/en_us.json', 'assets/xporbtrails/lang/zh_cn.json'

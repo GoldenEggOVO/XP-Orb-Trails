@@ -19,6 +19,14 @@ public final class TrailClientTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        String expectedJar = System.getProperty("xporb.expectedModJar");
+        if (expectedJar != null) {
+            try {
+                var actual = java.nio.file.Path.of(XpOrbTrailsClient.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+                if (!java.nio.file.Files.isSameFile(actual, java.nio.file.Path.of(expectedJar)))
+                    throw new AssertionError("Client must load the packaged mod: " + actual);
+            } catch (java.io.IOException | java.net.URISyntaxException exception) { throw new AssertionError(exception); }
+        }
         if (Boolean.getBoolean("xporb.probeRestart")) {
             context.runOnClient(client -> {
                 check(XpOrbTrailsClient.CONFIG.width == 0.37, "Trail width must survive a client restart");
@@ -33,11 +41,11 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> {
             XpOrbTrailsClient.CONFIG = new TrailConfig();
             XpOrbTrailsClient.CONFIG.pickupFlashStyle = "ring";
-            client.gui.setScreen(ModMenu.getConfigScreen("xporbtrails", client.gui.screen()));
+            client.setScreen(ModMenu.getConfigScreen("xporbtrails", client.screen));
         });
         context.waitForScreen(TrailConfigScreen.class);
         context.runOnClient(client -> {
-            boolean commonPage = client.gui.screen().children().stream().anyMatch(child ->
+            boolean commonPage = client.screen.children().stream().anyMatch(child ->
                     child instanceof AbstractWidget widget && widget.getMessage().getString().equals(
                             net.minecraft.network.chat.Component.translatable("screen.xporbtrails.common").getString()));
             if (!commonPage) throw new AssertionError("Settings must open with a Common tab");
@@ -45,7 +53,7 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.waitTicks(3);
         context.takeScreenshot("menu-common-small");
         context.runOnClient(client -> {
-            long sliders = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton).count();
+            long sliders = widgets(client.screen).stream().filter(w -> w instanceof AbstractSliderButton).count();
             check(sliders == 4, "Common page must have width, retention, disappearance fade, and effect strength sliders");
             XpOrbTrailsClient.CONFIG.enabled = false;
             XpOrbTrailsClient.CONFIG.renderRange = 71;
@@ -68,7 +76,7 @@ public final class TrailClientTest implements FabricClientGameTest {
                 XpOrbTrailsClient.CONFIG.crossSectionSides = sides;
                 try {
                     var start = TrailPreviewScreen.class.getDeclaredField("demoStartNanos");
-                    start.setAccessible(true); start.setLong(client.gui.screen(), System.nanoTime() - 2_000_000_000L);
+                    start.setAccessible(true); start.setLong(client.screen, System.nanoTime() - 2_000_000_000L);
                 } catch (ReflectiveOperationException exception) { throw new AssertionError(exception); }
             });
             context.waitTicks(2);
@@ -77,12 +85,12 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> XpOrbTrailsClient.CONFIG.crossSectionSides = 2);
         context.clickScreenButton("screen.xporbtrails.replay_pickup");
         context.runOnClient(client -> {
-            double elapsed = (System.nanoTime() - (long) field(client.gui.screen(), "demoStartNanos")) / 1_000_000_000.0;
+            double elapsed = (System.nanoTime() - (long) field(client.screen, "demoStartNanos")) / 1_000_000_000.0;
             check(elapsed >= 4.0 && elapsed < 4.5, "Replay pickup must jump immediately to the flash phase");
             verifyPreviewAccuracy();
         });
         context.takeScreenshot("preview-replay-pickup");
-        context.runOnClient(client -> client.gui.screen().onClose());
+        context.runOnClient(client -> client.screen.onClose());
         context.clickScreenButton("screen.xporbtrails.appearance");
         context.runOnClient(client -> {
             XpOrbTrailsClient.CONFIG.pickupFadeSeconds = 1.1;
@@ -116,7 +124,7 @@ public final class TrailClientTest implements FabricClientGameTest {
                 "Reset appearance must restore the camera-facing cross-section"));
         context.takeScreenshot("cross-section-slider");
         context.runOnClient(client -> {
-            for (AbstractWidget widget : widgets(client.gui.screen())) {
+            for (AbstractWidget widget : widgets(client.screen)) {
                 String label = widget.getMessage().getString();
                 if (label.contains("#")) check(label.chars().filter(c -> c == '■').count() == 1,
                         "Individual color controls must show exactly one swatch");
@@ -127,7 +135,7 @@ public final class TrailClientTest implements FabricClientGameTest {
         });
         context.clickScreenButton("screen.xporbtrails.common");
         context.clickScreenButton("screen.xporbtrails.appearance");
-        context.runOnClient(client -> check(widgets(client.gui.screen()).stream().anyMatch(w ->
+        context.runOnClient(client -> check(widgets(client.screen).stream().anyMatch(w ->
                 w.getMessage().getString().equals(net.minecraft.network.chat.Component.translatable(
                         "screen.xporbtrails.save_preset").getString()) && !w.active), "Saving must stop at twelve colors"));
         var beforeFold = configModifiedTime();
@@ -135,7 +143,7 @@ public final class TrailClientTest implements FabricClientGameTest {
         check(configModifiedTime().equals(beforeFold), "Expanding a settings section must not write the config");
         var managesColors = new java.util.concurrent.atomic.AtomicBoolean();
         context.runOnClient(client -> {
-            managesColors.set(widgets(client.gui.screen()).stream().anyMatch(w -> w.getMessage().getString().equals(
+            managesColors.set(widgets(client.screen).stream().anyMatch(w -> w.getMessage().getString().equals(
                     net.minecraft.network.chat.Component.translatable("screen.xporbtrails.manage_color").getString())));
             check(managesColors.get(), "Saved colors must expose rename and overwrite management");
         });
@@ -143,10 +151,10 @@ public final class TrailClientTest implements FabricClientGameTest {
             click(context, "screen.xporbtrails.manage_color");
             check(configModifiedTime().equals(beforeFold), "Selecting a saved color must not write the config");
             context.runOnClient(client -> {
-                var name = widgets(client.gui.screen()).stream().filter(w -> w instanceof net.minecraft.client.gui.components.EditBox)
+                var name = widgets(client.screen).stream().filter(w -> w instanceof net.minecraft.client.gui.components.EditBox)
                         .map(w -> (net.minecraft.client.gui.components.EditBox) w).findFirst().orElseThrow();
                 name.setValue(" ");
-                check(widgets(client.gui.screen()).stream().anyMatch(w -> !w.active && w.getMessage().getString().equals(
+                check(widgets(client.screen).stream().anyMatch(w -> !w.active && w.getMessage().getString().equals(
                         net.minecraft.network.chat.Component.translatable("screen.xporbtrails.rename_color").getString())),
                         "Blank saved color names must disable Rename");
                 name.setValue("Renamed Color");
@@ -199,20 +207,20 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.waitForScreen(TrailConfigScreen.class);
         context.runOnClient(client -> {
             check("rainbow".equals(XpOrbTrailsClient.CONFIG.colorMode), "List selection must apply the selected color mode");
-            check(widgets(client.gui.screen()).stream().noneMatch(w -> w.getMessage().getString().contains("#")),
+            check(widgets(client.screen).stream().noneMatch(w -> w.getMessage().getString().contains("#")),
                     "Rainbow mode must hide fixed color controls");
         });
         click(context, "screen.xporbtrails.mode.rainbow");
         click(context, "screen.xporbtrails.mode.solid");
-        context.runOnClient(client -> check(widgets(client.gui.screen()).stream()
+        context.runOnClient(client -> check(widgets(client.screen).stream()
                 .filter(w -> w.getMessage().getString().contains("#")).count() == 1,
                 "Solid mode must show only one color control"));
         context.clickScreenButton("screen.xporbtrails.advanced");
-        context.runOnClient(client -> check(widgets(client.gui.screen()).stream()
+        context.runOnClient(client -> check(widgets(client.screen).stream()
                 .filter(w -> w instanceof AbstractSliderButton).count() == 3,
                 "Position detail sliders must be collapsed initially"));
         click(context, "screen.xporbtrails.expand");
-        context.runOnClient(client -> check(widgets(client.gui.screen()).stream()
+        context.runOnClient(client -> check(widgets(client.screen).stream()
                 .filter(w -> w instanceof AbstractSliderButton).count() == 5,
                 "Expanding position details must expose both offsets"));
         context.clickScreenButton("screen.xporbtrails.reset");
@@ -242,7 +250,7 @@ public final class TrailClientTest implements FabricClientGameTest {
         context.runOnClient(client -> {
             check(XpOrbTrailsClient.CONFIG.savedProfiles.getFirst().effectStrength == 0.91,
                     "Overwriting a profile must capture the merged strength");
-            widgets(client.gui.screen()).stream().filter(w -> w instanceof net.minecraft.client.gui.components.EditBox)
+            widgets(client.screen).stream().filter(w -> w instanceof net.minecraft.client.gui.components.EditBox)
                     .map(w -> (net.minecraft.client.gui.components.EditBox) w).findFirst().orElseThrow().setValue("Renamed");
         });
         click(context, "screen.xporbtrails.rename_profile");
@@ -261,17 +269,17 @@ public final class TrailClientTest implements FabricClientGameTest {
                 "Saving a profile must choose an unused name"));
         context.clickScreenButton("screen.xporbtrails.common");
         context.runOnClient(client -> {
-            var list = (TrailSettingsList) client.gui.screen().children().stream().filter(w -> w instanceof TrailSettingsList).findFirst().orElseThrow();
+            var list = (TrailSettingsList) client.screen.children().stream().filter(w -> w instanceof TrailSettingsList).findFirst().orElseThrow();
             list.setScrollAmount(0);
             client.setLastInputType(net.minecraft.client.InputType.KEYBOARD_TAB);
             for (int i = 0; i < 30 && list.scrollAmount() == 0; i++) {
-                client.gui.screen().keyPressed(new net.minecraft.client.input.KeyEvent(
+                client.screen.keyPressed(new net.minecraft.client.input.KeyEvent(
                         com.mojang.blaze3d.platform.InputConstants.KEY_TAB, '\t', 0));
             }
             check(list.scrollAmount() > 0, "Keyboard navigation must reveal controls below the viewport");
             client.options.guiScale().set(1);
             client.resizeGui();
-            client.gui.screen().setFocused(null);
+            client.screen.setFocused(null);
             client.setLastInputType(net.minecraft.client.InputType.MOUSE);
         });
         context.waitTicks(3);
@@ -283,7 +291,7 @@ public final class TrailClientTest implements FabricClientGameTest {
             client.options.languageCode = "zh_cn";
             languageReload.set(client.reloadResourcePacks());
         });
-        context.waitFor(client -> languageReload.get().isDone() && client.gui.overlay() == null);
+        context.waitFor(client -> languageReload.get().isDone() && client.getOverlay() == null);
         context.waitTicks(5);
         context.takeScreenshot("menu-common-chinese");
         context.runOnClient(client -> {
@@ -293,11 +301,11 @@ public final class TrailClientTest implements FabricClientGameTest {
             client.options.languageCode = "en_us";
             languageReload.set(client.reloadResourcePacks());
         });
-        context.waitFor(client -> languageReload.get().isDone() && client.gui.overlay() == null);
+        context.waitFor(client -> languageReload.get().isDone() && client.getOverlay() == null);
         context.waitTicks(3);
         context.runOnClient(client -> {
-            var screen = new ColorPickerScreen(client.gui.screen(), 0x00FF00, color -> { });
-            client.gui.setScreen(screen);
+            var screen = new ColorPickerScreen(client.screen, 0x00FF00, color -> { });
+            client.setScreen(screen);
             screen.resize(427, 240);
             for (var child : screen.children()) {
                 if (child instanceof AbstractWidget widget) {
@@ -307,11 +315,11 @@ public final class TrailClientTest implements FabricClientGameTest {
             }
         });
         context.takeScreenshot("color-picker-small");
-        context.runOnClient(client -> client.gui.screen().onClose());
-        context.runOnClient(client -> client.gui.screen().onClose());
+        context.runOnClient(client -> client.screen.onClose());
+        context.runOnClient(client -> client.screen.onClose());
 
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
-            world.getConnection().waitForChunksRender();
+            world.getClientLevel().waitForChunksRender();
             context.runOnClient(client -> {
                 trails().clear();
                 XpOrbTrailsClient.CONFIG = new TrailConfig();
@@ -369,7 +377,7 @@ public final class TrailClientTest implements FabricClientGameTest {
             context.runOnClient(client -> {
                 trails().clear();
                 XpOrbTrailsClient.CONFIG.trailCap = 8;
-                var camera = client.gameRenderer.mainCamera().position();
+                var camera = client.gameRenderer.getMainCamera().position();
                 var orbs = new ArrayList<ExperienceOrb>();
                 for (int i = 0; i < 9; i++) {
                     var orb = new ExperienceOrb(client.level, camera.x, camera.y, camera.z + 3, 1);
@@ -534,9 +542,9 @@ public final class TrailClientTest implements FabricClientGameTest {
     private static void click(ClientGameTestContext context, String key) {
         String label = net.minecraft.network.chat.Component.translatable(key).getString();
         context.runOnClient(client -> {
-            AbstractWidget target = widgets(client.gui.screen()).stream()
+            AbstractWidget target = widgets(client.screen).stream()
                     .filter(w -> w.getMessage().getString().equals(label)).findFirst().orElseThrow();
-            for (var child : client.gui.screen().children()) {
+            for (var child : client.screen.children()) {
                 if (child instanceof TrailSettingsList list) {
                     for (var row : list.children()) {
                         if (row.children().contains(target)) list.setScrollAmount(list.scrollAmount() + row.getY() - list.getY() - 8);
@@ -546,7 +554,7 @@ public final class TrailClientTest implements FabricClientGameTest {
         });
         context.waitTicks(2);
         context.runOnClient(client -> {
-            Screen screen = client.gui.screen();
+            Screen screen = client.screen;
             AbstractWidget target = widgets(screen).stream().filter(w -> w.getMessage().getString().equals(label)).findFirst().orElseThrow();
             var event = new net.minecraft.client.input.MouseButtonEvent(target.getX() + target.getWidth() / 2.0,
                     target.getY() + target.getHeight() / 2.0,
@@ -554,31 +562,31 @@ public final class TrailClientTest implements FabricClientGameTest {
             if (!screen.mouseClicked(event, false)) throw new AssertionError("Control did not accept click: " + key);
             screen.mouseReleased(event);
             System.out.println("Menu click " + key + " at " + event.x() + "," + event.y()
-                    + " -> " + client.gui.screen().getClass().getSimpleName());
+                    + " -> " + client.screen.getClass().getSimpleName());
         });
         context.waitTicks(2);
     }
 
     private static void slideCrossSection(ClientGameTestContext context, double fraction) {
         context.runOnClient(client -> {
-            var slider = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton
+            var slider = widgets(client.screen).stream().filter(w -> w instanceof AbstractSliderButton
                     && w.getMessage().getString().equals(TrailConfigScreen.crossSectionLabel(
                             XpOrbTrailsClient.CONFIG.crossSectionSides).getString())).findFirst().orElseThrow();
-            for (var child : client.gui.screen().children()) if (child instanceof TrailSettingsList list) {
+            for (var child : client.screen.children()) if (child instanceof TrailSettingsList list) {
                 for (var row : list.children()) if (row.children().contains(slider))
                     list.setScrollAmount(list.scrollAmount() + row.getY() - list.getY() - 8);
             }
         });
         context.waitTicks(2);
         context.runOnClient(client -> {
-            var slider = widgets(client.gui.screen()).stream().filter(w -> w instanceof AbstractSliderButton
+            var slider = widgets(client.screen).stream().filter(w -> w instanceof AbstractSliderButton
                     && w.getMessage().getString().equals(TrailConfigScreen.crossSectionLabel(
                             XpOrbTrailsClient.CONFIG.crossSectionSides).getString())).findFirst().orElseThrow();
             var event = new net.minecraft.client.input.MouseButtonEvent(slider.getX() + 4 + (slider.getWidth() - 8) * fraction,
                     slider.getY() + 10, new net.minecraft.client.input.MouseButtonInfo(
                             com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
-            if (!client.gui.screen().mouseClicked(event, false)) throw new AssertionError("Slider did not accept click");
-            client.gui.screen().mouseReleased(event);
+            if (!client.screen.mouseClicked(event, false)) throw new AssertionError("Slider did not accept click");
+            client.screen.mouseReleased(event);
         });
         context.waitTicks(2);
     }

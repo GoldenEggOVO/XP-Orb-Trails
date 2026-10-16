@@ -241,7 +241,7 @@ public final class TrailPreviewScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (minecraft != null) minecraft.gui.setScreen(parent);
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override public boolean isPauseScreen() { return false; }

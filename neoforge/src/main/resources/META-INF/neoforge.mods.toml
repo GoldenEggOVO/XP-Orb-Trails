@@ -18,13 +18,13 @@ config="xporbtrails.client.mixins.json"
 [[dependencies.xporbtrails]]
 modId="neoforge"
 type="required"
-versionRange="[26.2.0.88,26.3)"
+versionRange="[26.1.0.1-beta,26.2)"
 ordering="NONE"
 side="CLIENT"
 
 [[dependencies.xporbtrails]]
 modId="minecraft"
 type="required"
-versionRange="[26.2,26.3)"
+versionRange="[26.1,26.2)"
 ordering="NONE"
 side="CLIENT"

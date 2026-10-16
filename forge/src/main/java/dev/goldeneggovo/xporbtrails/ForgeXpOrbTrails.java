@@ -26,7 +26,7 @@ public final class ForgeXpOrbTrails {
             Minecraft client = Minecraft.getInstance();
             TrailRenderer.updateWorld(client.level);
             while (openSettings.consumeClick()) {
-                client.gui.setScreen(XpOrbTrailsClient.createConfigScreen(client.gui.screen()));
+                client.setScreen(XpOrbTrailsClient.createConfigScreen(client.screen));
             }
         });
     }
