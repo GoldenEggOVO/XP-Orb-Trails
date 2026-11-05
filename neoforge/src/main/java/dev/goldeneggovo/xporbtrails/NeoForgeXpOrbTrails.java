@@ -1,7 +1,6 @@
 package dev.goldeneggovo.xporbtrails;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -13,7 +12,6 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -37,15 +35,5 @@ public final class NeoForgeXpOrbTrails {
         });
         NeoForge.EVENT_BUS.addListener((ExtractLevelRenderStateEvent event) -> TrailRenderer.extract(
                 event.getLevel(), event.getCamera().position(), event.getDeltaTracker().getGameTimeDeltaPartialTick(true)));
-        NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterLevel event) -> {
-            var camera = event.getLevelRenderState().cameraRenderState;
-            var modelView = RenderSystem.getModelViewStack();
-            modelView.pushMatrix().mul(camera.viewRotationMatrix);
-            try {
-                TrailRenderer.render(camera.pos);
-            } finally {
-                modelView.popMatrix();
-            }
-        });
     }
 }

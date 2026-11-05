@@ -19,6 +19,10 @@ public final class TrailClientTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        if (Boolean.getBoolean("xporb.shaderProbe")) {
+            ShaderTrailClientTest.run(context);
+            return;
+        }
         if (Boolean.getBoolean("xporb.probeRestart")) {
             context.runOnClient(client -> {
                 check(XpOrbTrailsClient.CONFIG.width == 0.37, "Trail width must survive a client restart");

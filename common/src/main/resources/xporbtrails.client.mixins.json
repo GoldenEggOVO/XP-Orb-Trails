@@ -7,6 +7,7 @@
 		"ClientPacketListenerMixin",
 		"ExperienceOrbMixin",
 		"GameRendererMixin",
+		"LevelRendererMixin",
 		"RenderPipelinesAccessor"
 	],
 	"injectors": {
