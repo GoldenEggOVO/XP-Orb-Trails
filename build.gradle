@@ -45,6 +45,7 @@ configure(subprojects.findAll { it.name != 'common' }) {
                 'dev/goldeneggovo/xporbtrails/mixin/ClientPacketListenerMixin.class',
                 'dev/goldeneggovo/xporbtrails/mixin/ExperienceOrbMixin.class',
                 'dev/goldeneggovo/xporbtrails/mixin/GameRendererMixin.class',
+                'dev/goldeneggovo/xporbtrails/mixin/LevelRendererMixin.class',
                 'dev/goldeneggovo/xporbtrails/mixin/RenderPipelinesAccessor.class',
                 'xporbtrails.client.mixins.json', 'pack.mcmeta', 'LICENSE_xp-orb-trails',
                 'assets/xporbtrails/icon.png',
@@ -55,8 +56,7 @@ configure(subprojects.findAll { it.name != 'common' }) {
                 'dev/goldeneggovo/xporbtrails/ModMenuIntegration.class']
             if (project.name == 'forge') required += ['META-INF/mods.toml',
                 'dev/goldeneggovo/xporbtrails/ForgeXpOrbTrails.class', 'xporbtrails.forge.mixins.json',
-                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelExtractorMixin.class',
-                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelRendererMixin.class']
+                'dev/goldeneggovo/xporbtrails/mixin/ForgeLevelExtractorMixin.class']
             if (project.name == 'neoforge') required += ['META-INF/neoforge.mods.toml',
                 'dev/goldeneggovo/xporbtrails/NeoForgeXpOrbTrails.class']
             new java.util.zip.ZipFile(artifact).withCloseable { zip ->

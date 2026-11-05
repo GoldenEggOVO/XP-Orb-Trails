@@ -77,6 +77,16 @@ public final class TrailClientProbe {
         step(() -> {
             String location = XpOrbTrailsClient.class.getProtectionDomain().getCodeSource().getLocation().toString();
             check(location.contains(".jar"), "Probe must load the packaged mod: " + location);
+            if (Boolean.getBoolean("xporb.expectShaders")) {
+                try {
+                    Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                    Object iris = api.getMethod("getInstance").invoke(null);
+                    check((boolean) api.getMethod("isShaderPackInUse").invoke(iris), "Iris shader pack must be active");
+                    System.out.println("XPORB_SHADER_PROBE iris_active=true");
+                } catch (ReflectiveOperationException error) {
+                    throw new AssertionError("Iris must be loaded for the shader probe", error);
+                }
+            }
             boolean restart = Boolean.getBoolean("xporb.probeRestart");
             check(XpOrbTrailsClient.CONFIG.width == (restart ? 0.37 : 0.42), "Existing configuration must load");
             check(XpOrbTrailsClient.CONFIG.savedPresets.stream().anyMatch(p -> p.name.equals(restart ? "Probe Color" : "Existing")),
@@ -250,7 +260,8 @@ public final class TrailClientProbe {
                         for (int y = 0; y < image.getHeight(); y++) {
                             for (int x = 0; x < image.getWidth(); x++) {
                                 int color = image.getPixel(x, y);
-                                if (((color >> 16) & 255) > 100 && (color & 255) > 100 && ((color >> 8) & 255) < 80) pixels++;
+                                int red = (color >> 16) & 255, green = (color >> 8) & 255, blue = color & 255;
+                                if (red > 100 && blue > 100 && Math.min(red, blue) - green > 25) pixels++;
                             }
                         }
                         check(pixels >= 3, name + " must draw magenta trail pixels, found " + pixels);

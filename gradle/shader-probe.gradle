@@ -1,0 +1,14 @@
+gradle.projectsEvaluated {
+    def fabric = gradle.rootProject.findProject(':fabric')
+    def directory = gradle.rootProject.findProperty('shaderProbeMods')
+    if (fabric == null || directory == null) {
+        throw new GradleException('Use -Ploaders=fabric -PclientTests -PshaderProbeMods=<Iris and Sodium directory>')
+    }
+    def jars = gradle.rootProject.file(directory).listFiles()?.findAll { it.name.endsWith('.jar') }
+    if (!jars) throw new GradleException('No shader test mod JARs found')
+    fabric.dependencies.add('gametestRuntimeOnly', fabric.files(jars))
+    fabric.tasks.named('runClientGameTest') {
+        systemProperty 'xporb.shaderProbe', 'true'
+        systemProperty 'xporb.expectShaders', fabric.findProperty('expectShaders') ?: 'false'
+    }
+}

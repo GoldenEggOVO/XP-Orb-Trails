@@ -75,6 +75,18 @@ the prior run's configuration and screenshots for this restart check.
 Screenshots and automation do not replace human in-game acceptance of appearance and feel.
 Use a separate Minecraft instance for testing; keep player data out of Git.
 
+For shader regressions, place matching Iris and Sodium JARs in a separate directory.
+Put the shader pack in `fabric/build/run/clientGameTest/shaderpacks/` and configure
+`config/iris.properties` in that disposable run directory. Then run:
+
+```sh
+./gradlew -Ploaders=fabric -PclientTests -I gradle/shader-probe.gradle -PshaderProbeMods=/path/to/shader-mods -PexpectShaders=true :fabric:runClientGameTest -x :fabric:deleteGameTestRunDir
+```
+
+Repeat with shaders disabled in Iris and `-PexpectShaders=false`. The probe verifies
+the actual Iris state, visible trail pixels in both blend modes, and wall occlusion.
+Shader mods are only loaded into this optional test run.
+
 ## Releases
 
 1. Update version, dependencies, README, and changelog on the Minecraft branch.
