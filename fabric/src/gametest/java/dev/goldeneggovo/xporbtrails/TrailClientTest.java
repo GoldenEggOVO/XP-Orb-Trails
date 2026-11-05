@@ -19,6 +19,10 @@ public final class TrailClientTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        if (Boolean.getBoolean("xporb.shaderProbe")) {
+            ShaderTrailClientTest.run(context);
+            return;
+        }
         String expectedJar = System.getProperty("xporb.expectedModJar");
         if (expectedJar != null) {
             try {

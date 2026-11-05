@@ -15,7 +15,6 @@ public final class FabricXpOrbTrailsClient implements ClientModInitializer {
         XpOrbTrailsClient.initialize(FabricLoader.getInstance().getConfigDir());
         LevelRenderEvents.END_EXTRACTION.register(context -> TrailRenderer.extract(
                 context.level(), context.camera().position(), context.deltaTracker().getGameTimeDeltaPartialTick(true)));
-        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(context -> TrailRenderer.render(context.levelState().cameraRenderState.pos));
         KeyMapping.Category category = KeyMapping.Category.register(
                 Identifier.fromNamespaceAndPath("xporbtrails", "settings"));
         KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(

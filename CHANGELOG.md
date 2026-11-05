@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1 — Minecraft 26.1.x (Unreleased)
+
+- Draw trails after final world composition so shader packs do not overwrite them.
+- Share the rendering hook across all loaders while preserving depth occlusion.
+
 ## 1.4.0 — Minecraft 26.1.x
 
 - Add Fabric, Forge, and NeoForge support for Minecraft 26.1, 26.1.1, and 26.1.2.
