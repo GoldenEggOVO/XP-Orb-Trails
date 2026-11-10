@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.1 — Minecraft 26.2 (Unreleased)
+## 1.4.1 — Minecraft 26.2
 
 - Draw trails after final world composition so shader packs do not overwrite them.
 - Share the rendering hook across all loaders while preserving depth occlusion.
