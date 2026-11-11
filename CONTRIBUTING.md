@@ -92,13 +92,16 @@ Shader mods are only loaded into this optional test run.
 1. Update version, dependencies, README, and changelog on the Minecraft branch.
 2. Build all loaders, inspect metadata, and complete client acceptance.
 3. Commit and push verified source only when authorized.
-4. Publish each loader with tag/title `<loader>-<mod-version>+<minecraft-version>`
-   and JAR `xp-orb-trails-<loader>-<mod-version>+<minecraft-version>.jar`.
-   Preserve existing releases unless replacement is explicitly requested.
+4. Publish one release per mod version with tag/title `v<mod-version>`.
+   Attach all supported loader and Minecraft builds as
+   `xp-orb-trails-<loader>-<mod-version>+<minecraft-version>.jar`.
+   Use the default Minecraft branch for the release tag; other Minecraft sources
+   remain on their version branches. Preserve existing tags unless their removal
+   is explicitly requested.
 5. Download published JARs and compare SHA-256 with local builds.
 
 Metadata uses the semantic version `1.4.1+mc26.3`; the loader prefix belongs
-in release names, tags, and filenames. Minecraft branches may share a
-mod version. On Modrinth, select the correct game version and loader as well.
+in JAR filenames. Release names and tags contain only the mod version. Minecraft
+branches may share a mod version. On Modrinth, select the correct game version and loader as well.
 Use Git and GitHub CLI for publishing. This repository has no Actions workflows.
 Keep build output, runtime files, credentials, and local reports out of Git.
