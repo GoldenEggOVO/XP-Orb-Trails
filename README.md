@@ -4,7 +4,7 @@
 [![Loaders](https://img.shields.io/badge/Loaders-Fabric%20%7C%20Forge%20%7C%20NeoForge-DBD0B4)](#requirements)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Download](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases) ·
+[Download](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/v1.4.1) ·
 [Changelog](CHANGELOG.md) ·
 [Report an issue](https://github.com/GoldenEggOVO/XP-Orb-Trails/issues) ·
 [Contributing](CONTRIBUTING.md)
@@ -114,14 +114,15 @@ are in `fabric/`, `forge/`, and `neoforge/`.
 
 ## Minecraft versions and branches
 
-Each supported Minecraft version has its own branch and release. Use the JAR
-matching your Minecraft version.
+Each supported Minecraft version has its own source branch. Each mod version has
+one release containing all available loader and Minecraft builds. Choose the JAR
+matching both your loader and Minecraft version.
 
 | Minecraft | Source branch | Fabric | Forge | NeoForge |
 | --- | --- | --- | --- | --- |
-| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.4.1+26.3) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.4.1+26.3) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.4.1+26.3) |
-| 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.4.1+26.2) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.4.1+26.2) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.4.1+26.2) |
-| 26.1 / 26.1.1 / 26.1.2 | [`26.1`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.1) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/fabric-1.4.1+26.1.2) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/forge-1.4.1+26.1.2) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/tag/neoforge-1.4.1+26.1.2) |
+| 26.3 | [`26.3`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.3) (default) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-fabric-1.4.1%2B26.3.jar) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-forge-1.4.1%2B26.3.jar) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-neoforge-1.4.1%2B26.3.jar) |
+| 26.2 | [`26.2`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.2) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-fabric-1.4.1%2B26.2.jar) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-forge-1.4.1%2B26.2.jar) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-neoforge-1.4.1%2B26.2.jar) |
+| 26.1 / 26.1.1 / 26.1.2 | [`26.1`](https://github.com/GoldenEggOVO/XP-Orb-Trails/tree/26.1) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-fabric-1.4.1%2B26.1.2.jar) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-forge-1.4.1%2B26.1.2.jar) | [1.4.1](https://github.com/GoldenEggOVO/XP-Orb-Trails/releases/download/v1.4.1/xp-orb-trails-neoforge-1.4.1%2B26.1.2.jar) |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout, validation, and
 release process. This repository does not use GitHub Actions workflows;
